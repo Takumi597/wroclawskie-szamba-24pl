@@ -1,0 +1,11 @@
+# terraform.tfvars
+# Copy this file and rename to terraform.tfvars
+# DO NOT commit this file with real passwords!
+
+project_name = "medusashop"
+location     = "westeurope"  
+environment  = "dev"         # Change to "prod" for production deployment
+
+# IMPORTANT: Generate a strong password
+# Use: openssl rand -base64 32
+postgres_admin_password = "CHANGE_ME_Strong_Password_123!"

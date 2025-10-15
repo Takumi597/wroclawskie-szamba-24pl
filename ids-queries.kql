@@ -1,0 +1,227 @@
+// 1 Skanowanie portów
+
+AzureDiagnostics
+| where Category == "ApplicationGatewayFirewallLog" or ResourceType == "NETWORKSECURITYGROUPS"
+| extend SourceIP = tostring(split(clientIP_s, ":")[0])
+| where TimeGenerated > ago(5m)
+| summarize 
+    DistinctPorts = dcount(serverPort_d),
+    TotalAttempts = count(),
+    Ports = make_set(serverPort_d),
+    FirstAttempt = min(TimeGenerated),
+    LastAttempt = max(TimeGenerated)
+    by SourceIP
+| where DistinctPorts > 10  // More than 10 different ports
+| where TotalAttempts > 20   // More than 20 attempts
+| extend 
+    Duration = LastAttempt - FirstAttempt,
+    Severity = case(
+        DistinctPorts > 50, "Critical",
+        DistinctPorts > 25, "High",
+        "Medium"
+    )
+| project 
+    TimeDetected = now(),
+    SourceIP,
+    Severity,
+    DistinctPorts,
+    TotalAttempts,
+    Duration,
+    PortsScanned = Ports,
+    FirstAttempt,
+    LastAttempt
+| order by Severity desc, DistinctPorts desc
+
+// 2 Nieautoryzowana próba eskalacji do Admina
+
+AppRequests
+| where TimeGenerated > ago(5m)
+| where Url contains "/admin" or Url contains "/app"
+| where ResultCode in (401, 403)  // Unauthorized or Forbidden
+| extend SourceIP = tostring(client_IP)
+| summarize 
+    FailedAttempts = count(),
+    UniqueUrls = dcount(Url),
+    Urls = make_set(Url),
+    FirstAttempt = min(TimeGenerated),
+    LastAttempt = max(TimeGenerated),
+    UserAgents = make_set(client_Browser)
+    by SourceIP
+| where FailedAttempts > 5  // More than 5 failed attempts
+| extend 
+    Duration = LastAttempt - FirstAttempt,
+    Severity = case(
+        FailedAttempts > 20, "Critical",
+        FailedAttempts > 10, "High",
+        "Medium"
+    ),
+    AttackType = "Brute Force Admin Access"
+| project 
+    TimeDetected = now(),
+    SourceIP,
+    Severity,
+    AttackType,
+    FailedAttempts,
+    Duration,
+    AttemptedUrls = Urls,
+    UserAgents,
+    FirstAttempt,
+    LastAttempt
+| order by Severity desc, FailedAttempts desc
+
+// 3 Próby SQLi
+
+AppRequests
+| where TimeGenerated > ago(10m)
+| extend QueryString = tostring(parse_url(Url).["Query Parameters"])
+| where QueryString contains "'" 
+    or QueryString contains "--"
+    or QueryString contains "union"
+    or QueryString contains "select"
+    or QueryString contains "drop"
+    or QueryString contains "exec"
+    or QueryString contains "script"
+| extend SourceIP = tostring(client_IP)
+| summarize 
+    InjectionAttempts = count(),
+    Patterns = make_set(QueryString),
+    FirstSeen = min(TimeGenerated),
+    LastSeen = max(TimeGenerated)
+    by SourceIP
+| where InjectionAttempts > 3
+| extend Severity = "High"
+| project 
+    TimeDetected = now(),
+    SourceIP,
+    Severity,
+    AttackType = "SQL Injection Attempt",
+    InjectionAttempts,
+    SuspiciousPatterns = Patterns,
+    FirstSeen,
+    LastSeen
+
+// 4 Wiele nieudanych prób logowania
+
+AppRequests
+| where TimeGenerated > ago(5m)
+| where Url contains "/auth/login" or Url contains "/admin/auth"
+| where ResultCode == 401
+| extend SourceIP = tostring(client_IP)
+| summarize 
+    FailedLogins = count(),
+    FirstAttempt = min(TimeGenerated),
+    LastAttempt = max(TimeGenerated),
+    AttemptedEmails = make_set(tostring(parse_json(Properties).email))
+    by SourceIP
+| where FailedLogins > 5
+| extend 
+    Duration = LastAttempt - FirstAttempt,
+    Severity = case(
+        FailedLogins > 15, "Critical",
+        FailedLogins > 10, "High",
+        "Medium"
+    )
+| project 
+    TimeDetected = now(),
+    SourceIP,
+    Severity,
+    AttackType = "Credential Stuffing",
+    FailedLogins,
+    Duration,
+    AttemptedEmails,
+    FirstAttempt,
+    LastAttempt
+| order by Severity desc
+
+// 5 Dziwne sesje
+
+AppRequests
+| where TimeGenerated > ago(10m)
+| extend SessionId = tostring(parse_json(Properties).sessionId)
+| extend SourceIP = tostring(client_IP)
+| where isnotempty(SessionId)
+| summarize 
+    UniqueIPs = dcount(SourceIP),
+    IPs = make_set(SourceIP),
+    RequestCount = count(),
+    Countries = make_set(client_CountryOrRegion),
+    FirstSeen = min(TimeGenerated),
+    LastSeen = max(TimeGenerated)
+    by SessionId
+| where UniqueIPs > 1  // Same session from multiple IPs
+    or array_length(Countries) > 1  // Same session from multiple countries
+| extend Severity = "High"
+| project 
+    TimeDetected = now(),
+    SessionId,
+    Severity,
+    AnomalyType = case(
+        UniqueIPs > 2, "Session Hijacking - Multiple IPs",
+        array_length(Countries) > 1, "Session Hijacking - Multiple Countries",
+        "Suspicious Session Activity"
+    ),
+    UniqueIPs,
+    SourceIPs = IPs,
+    Countries,
+    RequestCount,
+    SessionDuration = LastSeen - FirstSeen
+
+// 6 DDoS Basic tier
+
+AppRequests
+| where TimeGenerated > ago(1m)
+| extend SourceIP = tostring(client_IP)
+| summarize 
+    RequestsPerMinute = count(),
+    UniqueUrls = dcount(Url),
+    AvgDuration = avg(DurationMs)
+    by SourceIP
+| where RequestsPerMinute > 100  // More than 100 requests per minute
+| extend Severity = case(
+    RequestsPerMinute > 500, "Critical",
+    RequestsPerMinute > 200, "High",
+    "Medium"
+)
+| project 
+    TimeDetected = now(),
+    SourceIP,
+    Severity,
+    AttackType = "Potential DDoS",
+    RequestsPerMinute,
+    UniqueUrls,
+    AvgDuration
+| order by Severity desc, RequestsPerMinute desc
+
+// 7 Dziwny ruch sieciowy
+
+AppRequests
+| where TimeGenerated > ago(5m)
+| summarize 
+    TotalRequests = count(),
+    ErrorRate = countif(ResultCode >= 400) * 100.0 / count(),
+    AvgDuration = avg(DurationMs),
+    UniqueClients = dcount(client_IP)
+    by bin(TimeGenerated, 1m)
+| extend 
+    RequestsChange = TotalRequests - prev(TotalRequests),
+    ErrorRateChange = ErrorRate - prev(ErrorRate)
+| where abs(RequestsChange) > 100  
+    or ErrorRate > 30  
+| extend Severity = case(
+    ErrorRate > 50, "Critical",
+    abs(RequestsChange) > 500, "Critical",
+    "Medium"
+)
+| project 
+    TimeDetected = TimeGenerated,
+    Severity,
+    AnomalyType = case(
+        RequestsChange > 0, "Traffic Spike",
+        RequestsChange < 0, "Traffic Drop",
+        "High Error Rate"
+    ),
+    TotalRequests,
+    RequestsChange,
+    ErrorRate,
+    AvgDuration,
+    UniqueClients

@@ -1,0 +1,29 @@
+# ============================================
+# Azure & Terraform - DO NOT COMMIT!
+# ============================================
+infrastructure/terraform.tfvars
+infrastructure/.terraform/
+infrastructure/*.tfstate
+infrastructure/*.tfstate.backup
+infrastructure/tfplan
+*.tfvars
+deployment-info.txt
+
+# ============================================
+# Environment - DO NOT COMMIT!
+# ============================================
+.env.production
+.env.staging
+
+# ============================================
+# Medusa Build
+# ============================================
+.medusa/server/
+.medusa/admin/
+
+# ============================================
+# Security Scanning
+# ============================================
+audit-results.json
+zap-report.*
+sonar-report/
