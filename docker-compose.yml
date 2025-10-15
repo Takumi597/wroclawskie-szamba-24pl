@@ -1,0 +1,74 @@
+services:
+  # postgres
+  postgres:
+    image: postgres:15-alpine
+    container_name: medusa_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: medusa-wroclawskie-szamba
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - medusa_network
+
+  # redis
+  redis:
+    image: redis:8-alpine
+    container_name: medusa_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    networks:
+      - medusa_network
+
+  # medusa
+  medusa:
+    build:
+      context: .
+      dockerfile: medusa.dockerfile
+    container_name: medusa_backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - '9000:9000'
+    environment:
+      - MEDUSA_ADMIN_ONBOARDING_TYPE=nextjs
+      - STORE_CORS=http://localhost:8000,https://docs.medusajs.com
+      - ADMIN_CORS=http://redis:5173,http://localhost:9000,https://docs.medusajs.com
+      - AUTH_CORS=http://localhost:5173,http://localhost:9000,http://localhost:8000,https://docs.medusajs.com
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=supersecret
+      - COOKIE_SECRET=supersecret
+      - DATABASE_URL=postgres://postgres:postgres@postgres/medusa-wroclawskie-szamba
+      - MEDUSA_ADMIN_ONBOARDING_NEXTJS_DIRECTORY=wroclawskie-szamba-storefront
+    networks:
+      - medusa_network
+
+  storefront:
+    build:
+      context: .
+      dockerfile: storefront.dockerfile
+    container_name: medusa_frontend
+    restart: unless-stopped
+    depends_on:
+      - medusa
+    ports:
+      - '8000:8000'
+    # environment: # create the .env in storefronts' dir
+    env_file:
+      - ./wroclawskie-szamba-storefront/.env
+    networks:
+      - medusa_network
+
+volumes:
+  postgres_data:
+
+networks:
+  medusa_network:
+    driver: bridge

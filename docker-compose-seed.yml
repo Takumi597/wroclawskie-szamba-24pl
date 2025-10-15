@@ -1,0 +1,15 @@
+services:
+  db_seeder:
+    build:
+      context: .
+      dockerfile: db_seeder.dockerfile
+    container_name: db_seeder
+    restart: on-failure
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://postgres:postgres@postgres/medusa-wroclawskie-szamba
+    networks:
+      - medusa_network

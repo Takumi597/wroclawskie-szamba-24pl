@@ -1,0 +1,179 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer utilities {
+  /* Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  input:focus ~ label,
+  input:not(:placeholder-shown) ~ label {
+    @apply -translate-y-2 text-xsmall-regular;
+  }
+
+  input:focus ~ label {
+    @apply left-0;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    border: 1px solid #212121;
+    -webkit-text-fill-color: #212121;
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+  }
+}
+
+@layer components {
+  .content-container {
+    @apply max-w-[1440px] w-full mx-auto px-6;
+  }
+
+  .contrast-btn {
+    @apply px-4 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors duration-200 ease-in;
+  }
+
+  .text-xsmall-regular {
+    @apply text-[10px] leading-4 font-normal;
+  }
+
+  .text-small-regular {
+    @apply text-xs leading-5 font-normal;
+  }
+
+  .text-small-semi {
+    @apply text-xs leading-5 font-semibold;
+  }
+
+  .text-base-regular {
+    @apply text-sm leading-6 font-normal;
+  }
+
+  .text-base-semi {
+    @apply text-sm leading-6 font-semibold;
+  }
+
+  .text-large-regular {
+    @apply text-base leading-6 font-normal;
+  }
+
+  .text-large-semi {
+    @apply text-base leading-6 font-semibold;
+  }
+
+  .text-xl-regular {
+    @apply text-2xl leading-[36px] font-normal;
+  }
+
+  .text-xl-semi {
+    @apply text-2xl leading-[36px] font-semibold;
+  }
+
+  .text-2xl-regular {
+    @apply text-[30px] leading-[48px] font-normal;
+  }
+
+  .text-2xl-semi {
+    @apply text-[30px] leading-[48px] font-semibold;
+  }
+
+  .text-3xl-regular {
+    @apply text-[32px] leading-[44px] font-normal;
+  }
+
+  .text-3xl-semi {
+    @apply text-[32px] leading-[44px] font-semibold;
+  }
+}
+
+/* El gradiente */
+@keyframes rgbGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.rgb-animated {
+  background: linear-gradient(
+    45deg,
+    rgba(255, 0, 85, 0.7),
+    rgba(255, 153, 0, 0.7),
+    rgba(255, 238, 0, 0.7),
+    rgba(51, 255, 0, 0.7),
+    rgba(0, 255, 238, 0.7),
+    rgba(0, 102, 255, 0.7),
+    rgba(170, 0, 255, 0.7),
+    rgba(255, 0, 85, 0.7)
+  );
+  background-size: 400% 400%;
+  animation: rgbGradientShift 12s ease infinite;
+}
+
+.poop-animated {
+  background: linear-gradient(
+    45deg,
+    rgba(58, 73, 28, 0.85),
+    rgba(89, 104, 41, 0.85),
+    rgba(124, 117, 37, 0.85),
+    rgba(150, 114, 42, 0.85),
+    rgba(95, 68, 33, 0.85),
+    rgba(54, 79, 56, 0.85),
+    rgba(38, 55, 59, 0.85),
+    rgba(80, 65, 22, 0.85),
+    rgba(58, 73, 28, 0.85)
+  );
+  background-size: 400% 400%;
+  animation: rgbGradientShift 12s ease infinite;
+}
+
+.violet-animated {
+  background: linear-gradient(
+    45deg,
+    rgba(76, 0, 153, 0.9),
+    rgba(122, 0, 204, 0.9),
+    rgba(171, 0, 255, 0.9),
+    rgba(255, 0, 191, 0.85),
+    rgba(255, 64, 129, 0.85),
+    rgba(111, 0, 178, 0.9),
+    rgba(48, 0, 96, 0.95),
+    rgba(26, 0, 54, 0.95),
+    rgba(76, 0, 153, 0.9)
+  );
+  background-size: 400% 400%;
+  animation: rgbGradientShift 12s ease infinite;
+}
+
+.text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
