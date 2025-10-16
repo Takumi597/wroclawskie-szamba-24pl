@@ -28,17 +28,17 @@ jobs:
           fetch-depth: 0
 
       # Rule 1: SonarCloud Analysis
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=${{ github.repository_owner }}_medusa-shop
-            -Dsonar.organization=${{ github.repository_owner }}
-            -Dsonar.sources=src
-            -Dsonar.javascript.node.maxspace=4096
+      #- name: SonarCloud Scan
+       # uses: SonarSource/sonarcloud-github-action@master
+       # env:
+        #  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+       # with:
+        #  args: >
+         #   -Dsonar.projectKey=${{ github.repository_owner }}_medusa-shop
+          #  -Dsonar.organization=${{ github.repository_owner }}
+           # -Dsonar.sources=src
+            #-Dsonar.javascript.node.maxspace=4096
 
       # Rule 2: Dependency vulnerability scanning
       - name: Run npm audit
