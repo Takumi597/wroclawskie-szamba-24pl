@@ -9,7 +9,7 @@ on:
 
 env:
   NODE_VERSION: '18.x'
-  AZURE_WEBAPP_NAME: 'app-medusashop-dev'  
+  AZURE_WEBAPP_NAME: 'app-medusashop-prod'
   AZURE_WEBAPP_PACKAGE_PATH: '.'
 
 jobs:
@@ -178,7 +178,7 @@ jobs:
       - name: Run database migrations
         run: |
           az webapp ssh --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group rg-medusashop-dev \
+            --resource-group rg-medusashop-prod \
             --command "cd /home/site/wwwroot && npx medusa migrations run"
         continue-on-error: true
 
@@ -208,8 +208,8 @@ jobs:
         run: |
           az monitor metrics alert create \
             --name "high-failed-login-attempts" \
-            --resource-group rg-medusashop-dev \
-            --scopes "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-dev/providers/microsoft.insights/components/appi-medusashop-dev" \
+            --resource-group rg-medusashop-prod \
+            --scopes "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-prod/providers/microsoft.insights/components/appi-medusashop-prod" \
             --condition "count requests < 5 where resultCode == 401" \
             --window-size 5m \
             --evaluation-frequency 1m \
@@ -221,8 +221,8 @@ jobs:
         run: |
           az monitor metrics alert create \
             --name "unusual-traffic-pattern" \
-            --resource-group rg-medusashop-dev \
-            --scopes "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-dev/providers/microsoft.insights/components/appi-medusashop-dev" \
+            --resource-group rg-medusashop-prod \
+            --scopes "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-prod/providers/microsoft.insights/components/appi-medusashop-prod" \
             --condition "avg requests > 1000" \
             --window-size 5m \
             --evaluation-frequency 1m \
