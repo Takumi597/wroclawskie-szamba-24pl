@@ -4,7 +4,13 @@
 
 project_name = "medusashop"
 location     = "westeurope"  
-environment  = "dev"         # Change to "prod" for production deployment
+environment  = "prod" #dev
+
+db_storage_mb = 32768
+db_sku_name   = "B_Standard_B2s"
+enable_geo_backup = false
+enable_ha = false
+enable_read_replica = false         
 
 # IMPORTANT: Generate a strong password
 # Use: openssl rand -base64 32

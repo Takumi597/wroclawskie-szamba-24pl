@@ -48,6 +48,36 @@ variable "postgres_admin_password" {
   sensitive   = true
 }
 
+variable "db_storage_mb" {
+  description = "Database storage in MB"
+  type        = number
+  default   = 32768
+}
+
+variable "db_sku_name" {
+  description = "Database SKU ( B_Standard_B1ms, B_Standard_B2s, GP_Standard_D2s_v3, "
+  type        = string
+  default   = "B_Standard_B2s"
+}
+
+variable "enable_geo_backup" {
+  description = "Geo-backup"
+  type        = bool
+  default   = false
+}
+
+variable "enable_ha" {
+  description = "High Availability"
+  type        = bool
+  default   = false
+}
+
+variable "enable_read_replica" {
+  description = "Read Replica - Horizontal Scaling"
+  type        = bool
+  default   = false
+}
+
 # Generate random strings for secrets
 resource "random_password" "jwt_secret" {
   length  = 64
@@ -167,13 +197,31 @@ resource "azurerm_postgresql_flexible_server" "main" {
   administrator_login    = "medusaadmin"
   administrator_password = var.postgres_admin_password
   zone                   = "1"
-  storage_mb             = 32768
-  sku_name               = "B_Standard_B1ms"
+  storage_mb             = var.db_storage_mb
+  sku_name               = var.db_sku_name
   backup_retention_days  = 7
+  geo_redundant_backup_enabled= var.enable_geo_backup
+  
+  dynamic "high_availability" {
+  	for_each=var.enable_ha ? [1] : []
+  	content {
+  		mode="ZoneRedundant"
+  	}
+  }
 
   depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
 
   tags = azurerm_resource_group.main.tags
+}
+
+resource "azurerm_postgresql_flexible_server" "replica" {
+  count			 = var.enable_read_replica ? 1 : 0
+  name                   = "psql-${var.project_name}-${var.environment}-replica"
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = azurerm_resource_group.main.location
+  create_mode		 = "Replica"
+  source_server_id	 = azurerm_postgresql_flexible_server.main.id
+  tags = merge(azurerm_resource_group.main.tags,{ Role = "ReadReplica" })
 }
 
 # PostgreSQL Database
@@ -210,12 +258,12 @@ resource "azurerm_redis_cache" "main" {
   capacity            = 0
   family              = "C"
   sku_name            = "Basic"
-  enable_non_ssl_port = false
+  non_ssl_port_enabled = false
   minimum_tls_version = "1.2"
   subnet_id           = azurerm_subnet.redis_subnet.id
 
   redis_configuration {
-    enable_authentication = true
+    authentication_enabled = true
   }
 
   tags = azurerm_resource_group.main.tags
@@ -327,13 +375,13 @@ resource "azurerm_linux_web_app" "main" {
     "COOKIE_SECRET" = random_password.cookie_secret.result
     
     # CORS
-    "STORE_CORS"  = "https://${azurerm_linux_web_app.main.default_hostname}"
-    "ADMIN_CORS"  = "https://${azurerm_linux_web_app.main.default_hostname}"
-    "AUTH_CORS"   = "https://${azurerm_linux_web_app.main.default_hostname}"
+    "STORE_CORS"  = "*"
+    "ADMIN_CORS"  = "*"
+    "AUTH_CORS"   = "*"
     
     # Medusa Configuration
     "NODE_ENV" = "production"
-    "MEDUSA_BACKEND_URL" = "https://${azurerm_linux_web_app.main.default_hostname}"
+    "MEDUSA_BACKEND_URL" = "https://app-${var.project_name}-${var.environment}.azurewebsites.net"
     
     # Storage
     "AZURE_STORAGE_ACCOUNT_NAME" = azurerm_storage_account.main.name
@@ -399,4 +447,24 @@ output "app_insights_connection_string" {
 
 output "medusa_admin_url" {
   value = "https://${azurerm_linux_web_app.main.default_hostname}/app"
+}
+
+output "database_sku" {
+  value = azurerm_postgresql_flexible_server.main.sku_name
+  description = "Current DB SKU"
+}
+
+output "database_backup_type" {
+  value = var.enable_geo_backup ? "Geo-Redundant" : "Local"
+  description = "Current redundancy level"
+}
+
+output "database_ha_enabled" {
+  value = var.enable_ha
+  description = "HA Status"
+}
+
+output "database_replica_count" {
+  value = var.enable_read_replica ? 1 : 0
+  description = "Current amount of read replicas"
 }
