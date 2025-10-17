@@ -101,13 +101,12 @@ jobs:
 
       - name: Create deployment package
         run: |
-          mkdir -p deploy
-          cp -r wroclawskie-szamba-medusa/.medusa deploy/
-          cp wroclawskie-szamba-medusa/package*.json deploy/
-          cp wroclawskie-szamba-medusa/medusa-config.ts deploy/
-          cp -r wroclawskie-szamba-medusa/src deploy/ 2>/dev/null || true
-          cd deploy && npm ci --omit=dev
-          cd ..
+          mkdir -p deploy/server
+          # Copy the built server output
+          cp -r wroclawskie-szamba-medusa/.medusa/server/* deploy/server/
+          # Install production dependencies in the server directory
+          cd deploy/server && npm install --omit=dev --ignore-scripts
+          cd ../..
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
