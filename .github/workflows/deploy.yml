@@ -172,18 +172,12 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ./deploy
-
-      - name: Run database migrations
-        run: |
-          az webapp ssh --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group rg-medusashop-prod \
-            --command "cd /home/site/wwwroot && npx medusa migrations run"
-        continue-on-error: true
+          package: ./deploy/server
 
       - name: Health check
         run: |
-          sleep 30
+          echo "Waiting for app to start (migrations run automatically)..."
+          sleep 60
           curl -f ${{ steps.deploy-to-webapp.outputs.webapp-url }}/health || exit 1
 
       - name: Logout from Azure
