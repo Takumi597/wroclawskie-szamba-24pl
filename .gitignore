@@ -8,7 +8,6 @@ infrastructure/*.tfstate.backup
 infrastructure/tfplan
 *.tfvars
 deployment-info.txt
-
 # ============================================
 # Environment - DO NOT COMMIT!
 # ============================================
@@ -27,3 +26,10 @@ deployment-info.txt
 audit-results.json
 zap-report.*
 sonar-report/
+
+# ============================================
+# Root Directory (Monorepo Management)
+# ============================================
+/package-lock.json
+/package.json
+/node_modules/

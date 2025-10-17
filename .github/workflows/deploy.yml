@@ -43,23 +43,24 @@ jobs:
       # Rule 2: Dependency vulnerability scanning
       - name: Run npm audit
         run: |
-          npm audit --audit-level=high --json > audit-results.json || true
-          cat audit-results.json
+          cd wroclawskie-szamba-medusa
+          npm audit --audit-level=high --json > ../audit-results.json || true
+          cat ../audit-results.json
         continue-on-error: true
 
       - name: Check for critical vulnerabilities
         run: |
           CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
           HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
-          
+
           echo "Critical vulnerabilities: $CRITICAL"
           echo "High vulnerabilities: $HIGH"
-          
+
           if [ "$CRITICAL" -gt "0" ]; then
             echo "❌ CRITICAL vulnerabilities found! Build failed."
             exit 1
           fi
-          
+
           if [ "$HIGH" -gt "3" ]; then
             echo "⚠️  Too many HIGH vulnerabilities found! Build failed."
             exit 1
@@ -70,7 +71,7 @@ jobs:
     name: Build Application
     runs-on: ubuntu-latest
     needs: sast
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -80,13 +81,17 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: 'wroclawskie-szamba-medusa/package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          cd wroclawskie-szamba-medusa
+          npm ci
 
       # Build admin dashboard (to avoid doing it on Azure)
       - name: Build Medusa Admin
         run: |
+          cd wroclawskie-szamba-medusa
           npx medusa build
         env:
           NODE_ENV: production
@@ -94,12 +99,13 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir -p deploy
-          cp -r .medusa deploy/
-          cp package*.json deploy/
-          cp medusa-config.js deploy/
-          cd deploy && npm ci --production
+          cp -r wroclawskie-szamba-medusa/.medusa deploy/
+          cp wroclawskie-szamba-medusa/package*.json deploy/
+          cp wroclawskie-szamba-medusa/medusa-config.ts deploy/
+          cp -r wroclawskie-szamba-medusa/src deploy/ 2>/dev/null || true
+          cd deploy && npm ci --omit=dev
           cd ..
-          
+
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
