@@ -104,8 +104,8 @@ jobs:
           mkdir -p deploy/server
           # Copy the built server output
           cp -r wroclawskie-szamba-medusa/.medusa/server/* deploy/server/
-          # Install production dependencies in the server directory
-          cd deploy/server && npm install --omit=dev --ignore-scripts
+          # Install all dependencies in the server directory
+          cd deploy/server && npm install --ignore-scripts
           cd ../..
 
       - name: Upload artifact for deployment
