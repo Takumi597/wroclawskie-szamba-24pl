@@ -357,7 +357,7 @@ resource "azurerm_linux_web_app" "main" {
     health_check_eviction_time_in_min       = 2
 
     application_stack {
-      node_version = "18-lts"
+      node_version = "20-lts"
     }
 
     cors {
@@ -367,7 +367,7 @@ resource "azurerm_linux_web_app" "main" {
   }
 
   app_settings = {
-    "WEBSITE_NODE_DEFAULT_VERSION" = "18-lts"
+    "WEBSITE_NODE_DEFAULT_VERSION" = "20-lts"
     "WEBSITES_PORT"                = "9000"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
     "WEBSITE_RUN_FROM_PACKAGE"     = "1"
