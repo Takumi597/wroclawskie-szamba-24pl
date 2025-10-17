@@ -13,15 +13,15 @@ module.exports = defineConfig({
       jwtSecret: process.env.JWT_SECRET || 'supersecret',
       cookieSecret: process.env.COOKIE_SECRET || 'supersecret',
     },
-    // FIXME: make it more secure in the production
     databaseDriverOptions: {
-      ssl: false,
-      sslmode: 'disable',
+      connection: {
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      },
     },
 
     cookieOptions: {
-      sameSite: 'lax',
-      secure: false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production' ? true : false,
     },
   },
 });
