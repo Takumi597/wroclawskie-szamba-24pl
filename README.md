@@ -1,5 +1,5 @@
 # WroclawskieSzamba24.pl
-
+# 17/10/25
 <img width="100%" alt="Screenshot_20251012_172221" src="https://github.com/user-attachments/assets/79b3a52e-2c79-44a4-a85e-2b96cbd2bf07" />
 
 

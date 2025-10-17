@@ -125,6 +125,7 @@ resource "azurerm_subnet" "app_subnet" {
       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
+  depends_on = [azurerm_virtual_network.main]
 }
 
 # Subnet for Database
@@ -143,6 +144,7 @@ resource "azurerm_subnet" "db_subnet" {
       ]
     }
   }
+  depends_on = [azurerm_virtual_network.main]
 }
 
 # Subnet for Redis
@@ -202,6 +204,12 @@ resource "azurerm_postgresql_flexible_server" "main" {
   backup_retention_days  = 7
   geo_redundant_backup_enabled= var.enable_geo_backup
   
+  public_network_access_enabled = false
+  timeouts {
+  	create = "60m"
+  	update = "60m"
+  	delete = "60m"
+  }
   dynamic "high_availability" {
   	for_each=var.enable_ha ? [1] : []
   	content {
@@ -209,7 +217,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   	}
   }
 
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
+  depends_on = [azurerm_subnet.db_subnet,azurerm_private_dns_zone_virtual_network_link.postgres]
 
   tags = azurerm_resource_group.main.tags
 }
@@ -260,7 +268,7 @@ resource "azurerm_redis_cache" "main" {
   sku_name            = "Basic"
   non_ssl_port_enabled = false
   minimum_tls_version = "1.2"
-  subnet_id           = azurerm_subnet.redis_subnet.id
+  # subnet_id           = azurerm_subnet.redis_subnet.id
 
   redis_configuration {
     authentication_enabled = true
@@ -409,7 +417,7 @@ resource "azurerm_linux_web_app" "main" {
       }
     }
   }
-
+  depends_on = [azurerm_postgresql_flexible_server.main,azurerm_redis_cache.main,azurerm_storage_account.main,azurerm_application_insights.main]
   tags = azurerm_resource_group.main.tags
 }
 

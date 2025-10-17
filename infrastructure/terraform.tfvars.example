@@ -3,7 +3,7 @@
 # DO NOT commit this file with real passwords!
 
 project_name = "medusashop"
-location     = "westeurope"  
+location     = "polandcentral"  
 environment  = "prod" #dev
 
 db_storage_mb = 32768
