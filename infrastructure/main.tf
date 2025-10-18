@@ -306,6 +306,17 @@ resource "azurerm_storage_container" "uploads" {
   container_access_type = "blob"
 }
 
+# Azure Container Registry for Docker images
+resource "azurerm_container_registry" "main" {
+  name                = "acr${var.project_name}${var.environment}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  sku                 = "Basic"  # Use Basic for student subscription (Standard for production)
+  admin_enabled       = true     # Enable admin user for CI/CD
+
+  tags = azurerm_resource_group.main.tags
+}
+
 # Log Analytics Workspace
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "log-${var.project_name}-${var.environment}"
@@ -355,10 +366,12 @@ resource "azurerm_linux_web_app" "main" {
     vnet_route_all_enabled                  = true
     health_check_path                       = "/health"
     health_check_eviction_time_in_min       = 2
-    app_command_line                        = "npm run predeploy && npm start"
 
     application_stack {
-      node_version = "22-lts"
+      docker_image_name   = "${azurerm_container_registry.main.login_server}/medusa:latest"
+      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      docker_registry_username = azurerm_container_registry.main.admin_username
+      docker_registry_password = azurerm_container_registry.main.admin_password
     }
 
     cors {
@@ -368,11 +381,9 @@ resource "azurerm_linux_web_app" "main" {
   }
 
   app_settings = {
-    "WEBSITE_NODE_DEFAULT_VERSION" = "22-lts"
     "WEBSITES_PORT"                = "9000"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
-    "WEBSITE_RUN_FROM_PACKAGE"     = "1"
-    
+    "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
+
     # Database
     "DATABASE_URL" = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.medusa.name}"
     
@@ -476,4 +487,21 @@ output "database_ha_enabled" {
 output "database_replica_count" {
   value = var.enable_read_replica ? 1 : 0
   description = "Current amount of read replicas"
+}
+
+output "acr_login_server" {
+  value = azurerm_container_registry.main.login_server
+  description = "Azure Container Registry login server URL"
+}
+
+output "acr_admin_username" {
+  value     = azurerm_container_registry.main.admin_username
+  sensitive = true
+  description = "ACR admin username"
+}
+
+output "acr_admin_password" {
+  value     = azurerm_container_registry.main.admin_password
+  sensitive = true
+  description = "ACR admin password"
 }

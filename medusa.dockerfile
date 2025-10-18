@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:22-alpine AS base
 
 # Builder
 FROM base AS builder
@@ -47,6 +47,5 @@ USER nodeusr
 # expose Medusa API port
 EXPOSE 9000
 
-# migrade the db and start the server
-CMD ["sh", "-c", "npx medusa db:migrate && npm run start"]
-# CMD ["npm", "medusa_start.sh"]
+# Run migrations, sync links, and start the server
+CMD ["sh", "-c", "npm run predeploy && npm run start"]
