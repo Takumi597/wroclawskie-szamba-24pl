@@ -14,6 +14,12 @@ const S3_PATHNAME = process.env.MEDUSA_CLOUD_S3_PATHNAME
 const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
+
+  // Ensure static files are served correctly
+  experimental: {
+    outputFileTracingRoot: undefined,
+  },
+
   logging: {
     fetches: {
       fullUrl: true,

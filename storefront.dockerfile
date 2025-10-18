@@ -33,9 +33,14 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8000
 
-# copy the artifacts from builder
-COPY --from=builder --chown=root:root /app/public ./public
+# copy the artifacts from builder (order matters!)
+# 1. Copy standalone first (includes server.js, .next server files, node_modules)
 COPY --from=builder --chown=root:root /app/.next/standalone ./
+
+# 2. Copy public files
+COPY --from=builder --chown=root:root /app/public ./public
+
+# 3. Copy static files to the correct location in standalone structure
 COPY --from=builder --chown=root:root /app/.next/static ./.next/static
 
 # healthcheck
