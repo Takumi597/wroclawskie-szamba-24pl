@@ -9,11 +9,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # do not call backend during builds
 ENV SKIP_REMOTE_FETCH=true
 
-# Set placeholder env vars for build - Next.js needs these to generate all chunks
+# Set server-side env vars for build
+ENV MEDUSA_BACKEND_URL=http://localhost:9000
+
+# Set NEXT_PUBLIC_* placeholder values that will be replaced at runtime
+# The entrypoint script will use sed to replace these placeholders with actual values
 ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_build_placeholder
 ENV NEXT_PUBLIC_BASE_URL=http://localhost:8000
 ENV NEXT_PUBLIC_DEFAULT_REGION=pl
-ENV MEDUSA_BACKEND_URL=http://localhost:9000
 
 COPY --chown=root:root --chmod=644 wroclawskie-szamba-storefront/package.json wroclawskie-szamba-storefront/package-lock.json ./
 
@@ -49,6 +52,9 @@ COPY --from=builder --chown=root:root /app/public ./public
 # 3. Copy static files to the correct location in standalone structure
 COPY --from=builder --chown=root:root /app/.next/static ./.next/static
 
+# Copy entrypoint script for runtime environment variable injection
+COPY --chown=root:root --chmod=755 storefront-entrypoint.sh /app/storefront-entrypoint.sh
+
 # healthcheck
 HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhost:${PORT} || exit 1
 
@@ -60,5 +66,5 @@ USER nodeusr
 # expose storefront's port
 EXPOSE 8000
 
-# start
-CMD ["node", "server.js"]
+# start with entrypoint script that injects runtime env vars
+CMD ["/app/storefront-entrypoint.sh"]
