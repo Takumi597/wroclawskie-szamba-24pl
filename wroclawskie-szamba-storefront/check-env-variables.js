@@ -10,6 +10,14 @@ const requiredEnvs = [
 ]
 
 function checkEnvVariables() {
+  // Skip validation during Docker builds (SKIP_REMOTE_FETCH is set in Dockerfile)
+  // The actual environment variables will be injected at runtime by Azure App Service
+  if (process.env.SKIP_REMOTE_FETCH === "true") {
+    console.log("⚠️  Skipping environment validation during build (SKIP_REMOTE_FETCH=true)")
+    console.log("   Environment variables will be validated at runtime")
+    return
+  }
+
   const missingEnvs = requiredEnvs.filter(function (env) {
     return !process.env[env.key]
   })
