@@ -155,6 +155,25 @@ resource "azurerm_subnet" "redis_subnet" {
   address_prefixes     = ["10.0.3.0/24"]
 }
 
+# Subnet for Container Instances
+resource "azurerm_subnet" "aci_subnet" {
+  name                 = "snet-aci"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.0.4.0/24"]
+
+  delegation {
+    name = "aci-delegation"
+    service_delegation {
+      name = "Microsoft.ContainerInstance/containerGroups"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/action"
+      ]
+    }
+  }
+  depends_on = [azurerm_virtual_network.main]
+}
+
 # Network Security Group for App
 resource "azurerm_network_security_group" "app_nsg" {
   name                = "nsg-app-${var.project_name}"
@@ -508,4 +527,9 @@ output "acr_admin_password" {
   value     = azurerm_container_registry.main.admin_password
   sensitive = true
   description = "ACR admin password"
+}
+
+output "aci_subnet_id" {
+  value = azurerm_subnet.aci_subnet.id
+  description = "Subnet ID for Azure Container Instances"
 }
