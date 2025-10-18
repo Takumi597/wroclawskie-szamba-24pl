@@ -23,10 +23,11 @@ REDIS_URL=$(az webapp config appsettings list \
   --query "[?name=='REDIS_URL'].value | [0]" \
   -o tsv)
 
-# Get ACR credentials
+# Get ACR credentials using REST API (workaround for Azure CLI bug)
 echo "Fetching ACR credentials..."
-ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
-ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
+ACR_CREDS=$(az rest --method post --uri "https://management.azure.com/subscriptions/12869276-74ab-4aad-81e0-fbe8a3f566f3/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ContainerRegistry/registries/$ACR_NAME/listCredentials?api-version=2023-01-01-preview")
+ACR_USERNAME=$(echo $ACR_CREDS | jq -r '.username')
+ACR_PASSWORD=$(echo $ACR_CREDS | jq -r '.passwords[0].value')
 
 # Run seeder as Azure Container Instance
 echo "Running seeder container..."
