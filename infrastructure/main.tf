@@ -368,7 +368,7 @@ resource "azurerm_linux_web_app" "main" {
     health_check_eviction_time_in_min       = 2
 
     application_stack {
-      docker_image_name   = "${azurerm_container_registry.main.login_server}/medusa:latest"
+      docker_image_name   = "medusa:latest"
       docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
       docker_registry_username = azurerm_container_registry.main.admin_username
       docker_registry_password = azurerm_container_registry.main.admin_password
