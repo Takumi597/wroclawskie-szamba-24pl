@@ -27,6 +27,10 @@ COPY --chown=root:root wroclawskie-szamba-storefront/ ./
 
 RUN npm run build
 
+# Debug: List generated files to verify parallel route chunks exist
+RUN echo "=== Checking .next/static/chunks/app structure ===" && \
+    find .next/static/chunks/app -type f -name "*.js" | head -20 || echo "No chunks found"
+
 # Prune dev dependencies for production
 # RUN npm prune --omit=dev
 
