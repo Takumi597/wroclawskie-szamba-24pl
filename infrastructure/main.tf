@@ -383,6 +383,7 @@ resource "azurerm_linux_web_app" "main" {
   app_settings = {
     "WEBSITES_PORT"                = "9000"
     "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
+    "WORKER_MODE"                  = "server"  # Run in server mode (handles API + background tasks)
 
     # Database
     "DATABASE_URL" = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.medusa.name}"
