@@ -355,6 +355,7 @@ resource "azurerm_linux_web_app" "main" {
     vnet_route_all_enabled                  = true
     health_check_path                       = "/health"
     health_check_eviction_time_in_min       = 2
+    app_command_line                        = "npm run predeploy && npm start"
 
     application_stack {
       node_version = "22-lts"
