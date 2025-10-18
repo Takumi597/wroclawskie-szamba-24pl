@@ -385,6 +385,9 @@ resource "azurerm_linux_web_app" "main" {
     "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
     "WORKER_MODE"                  = "server"  # Run in server mode (handles API + background tasks)
 
+    # DNS Configuration for Private DNS Zone resolution
+    "WEBSITE_DNS_SERVER"           = "168.63.129.16"  # Azure DNS server required for private DNS zones
+
     # Database
     "DATABASE_URL" = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.medusa.name}"
     

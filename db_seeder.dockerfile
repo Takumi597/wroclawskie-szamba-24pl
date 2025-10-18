@@ -2,12 +2,14 @@ FROM node:24-alpine
 
 WORKDIR /app
 
+ENV MEDUSA_DISABLE_TELEMETRY=true
+
 COPY --chown=root:root --chmod=644 wroclawskie-szamba-medusa/package.json wroclawskie-szamba-medusa/package-lock.json ./
 
 # install dependencies
 RUN npm ci --no-audit --no-fund --ignore-scripts
 
-COPY --chown=root:root --chmod=755 ../db_seed.sh ./
+COPY --chown=root:root --chmod=755 db_seed.sh ./
 COPY --chown=root:root wroclawskie-szamba-medusa/ ./
 
 # create non-root user

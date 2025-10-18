@@ -84,6 +84,19 @@ jobs:
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
+      - name: Build DB Seeder image
+        run: |
+          docker build \
+            -f db_seeder.dockerfile \
+            -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }} \
+            -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest \
+            .
+
+      - name: Push DB Seeder image
+        run: |
+          docker push ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest
+
       - name: Logout from Azure
         run: az logout
         if: always()
