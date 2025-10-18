@@ -9,6 +9,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # do not call backend during builds
 ENV SKIP_REMOTE_FETCH=true
 
+# Set placeholder env vars for build - Next.js needs these to generate all chunks
+ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_build_placeholder
+ENV NEXT_PUBLIC_BASE_URL=http://localhost:8000
+ENV NEXT_PUBLIC_DEFAULT_REGION=pl
+ENV MEDUSA_BACKEND_URL=http://localhost:9000
+
 COPY --chown=root:root --chmod=644 wroclawskie-szamba-storefront/package.json wroclawskie-szamba-storefront/package-lock.json ./
 
 # install dependencies
