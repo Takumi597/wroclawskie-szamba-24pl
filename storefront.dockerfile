@@ -12,10 +12,10 @@ ENV SKIP_REMOTE_FETCH=true
 # Set server-side env vars for build
 ENV MEDUSA_BACKEND_URL=http://localhost:9000
 
-# Set NEXT_PUBLIC_* placeholder values that will be replaced at runtime
-# The entrypoint script will use sed to replace these placeholders with actual values
-ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_build_placeholder
-ENV NEXT_PUBLIC_BASE_URL=http://localhost:8000
+# Set NEXT_PUBLIC_* values - these get embedded in JavaScript bundles
+# TODO: Change to runtime injection after debugging
+ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_81baff65b1039fe09a90cacb935555f86467fc5e68d0081a438fea5a41ad603c
+ENV NEXT_PUBLIC_BASE_URL=https://storefront-medusashop-prod.azurewebsites.net
 ENV NEXT_PUBLIC_DEFAULT_REGION=pl
 
 COPY --chown=root:root --chmod=644 wroclawskie-szamba-storefront/package.json wroclawskie-szamba-storefront/package-lock.json ./
@@ -52,17 +52,11 @@ COPY --from=builder --chown=root:root /app/public ./public
 # 3. Copy static files to the correct location in standalone structure
 COPY --from=builder --chown=root:root /app/.next/static ./.next/static
 
-# Copy entrypoint script for runtime environment variable injection
-COPY --chown=root:root --chmod=755 storefront-entrypoint.sh /app/storefront-entrypoint.sh
-
 # healthcheck
 HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhost:${PORT} || exit 1
 
 # create non-root user
 RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
-
-# Change ownership of .next/static to nodeusr so the entrypoint can modify files
-RUN chown -R nodeusr:nodegrp /app/.next/static
 
 # drop privileges
 USER nodeusr
@@ -70,5 +64,5 @@ USER nodeusr
 # expose storefront's port
 EXPOSE 8000
 
-# start with entrypoint script that injects runtime env vars
-CMD ["/app/storefront-entrypoint.sh"]
+# start server directly
+CMD ["node", "server.js"]

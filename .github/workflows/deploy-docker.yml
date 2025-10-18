@@ -340,29 +340,45 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Create alert for failed logins
+      - name: Get Application Insights workspace ID
+        id: get-appinsights
         run: |
-          az monitor metrics alert create \
+          WORKSPACE_ID=$(az monitor app-insights component show \
+            --app appi-medusashop-prod \
+            --resource-group rg-medusashop-prod \
+            --query "workspaceResourceId" -o tsv)
+          echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
+
+      - name: Create alert for failed login attempts
+        run: |
+          az monitor scheduled-query create \
             --name "high-failed-login-attempts" \
             --resource-group rg-medusashop-prod \
-            --scopes "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-prod/providers/microsoft.insights/components/appi-medusashop-prod" \
-            --condition "count requests < 5 where resultCode == 401" \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'Placeholder' > 10" \
+            --condition-query "requests | where resultCode == 401 | summarize count()" \
+            --description "Alert when failed login attempts (401) exceed threshold" \
+            --evaluation-frequency 5m \
             --window-size 5m \
-            --evaluation-frequency 1m \
-            --description "Alert when failed login attempts exceed threshold"
+            --severity 2 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
         continue-on-error: true
 
       - name: Create alert for unusual traffic
         run: |
-          az monitor metrics alert create \
+          az monitor scheduled-query create \
             --name "unusual-traffic-pattern" \
             --resource-group rg-medusashop-prod \
-            --scopes "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-prod/providers/microsoft.insights/components/appi-medusashop-prod" \
-            --condition "avg requests > 1000" \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'Placeholder' > 1000" \
+            --condition-query "requests | summarize count()" \
+            --description "Alert on unusual traffic spikes" \
+            --evaluation-frequency 5m \
             --window-size 5m \
-            --evaluation-frequency 1m \
-            --description "Alert on unusual traffic spikes"
+            --severity 3 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
         continue-on-error: true
 
       - name: Logout from Azure
         run: az logout
+        if: always()
