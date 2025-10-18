@@ -34,7 +34,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8000
 
 # copy the artifacts from builder
-COPY --from=builder --chown=root:root --chmod=644 /app/.env ./
 COPY --from=builder --chown=root:root /app/public ./public
 COPY --from=builder --chown=root:root /app/.next/standalone ./
 COPY --from=builder --chown=root:root /app/.next/static ./.next/static

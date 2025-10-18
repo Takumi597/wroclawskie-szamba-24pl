@@ -11,7 +11,7 @@ db_sku_name   = "B_Standard_B2s"
 enable_geo_backup = false
 enable_ha = false
 enable_read_replica = false         
-
+medusa_publishable_key = ""
 # IMPORTANT: Generate a strong password
 # Use: openssl rand -base64 32
 postgres_admin_password = "CHANGE_ME_Strong_Password_123!"

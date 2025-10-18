@@ -97,6 +97,19 @@ jobs:
           docker push ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }}
           docker push ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest
 
+      - name: Build Storefront image
+        run: |
+          docker build \
+            -f storefront.dockerfile \
+            -t ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }} \
+            -t ${{ env.ACR_NAME }}.azurecr.io/storefront:latest \
+            .
+
+      - name: Push Storefront image
+        run: |
+          docker push ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/storefront:latest
+
       - name: Logout from Azure
         run: az logout
         if: always()
@@ -151,6 +164,12 @@ jobs:
             --name ${{ env.AZURE_WEBAPP_NAME }} \
             --resource-group rg-medusashop-prod
 
+      - name: Restart Storefront App Service to pull latest image
+        run: |
+          az webapp restart \
+            --name storefront-medusashop-prod \
+            --resource-group rg-medusashop-prod
+
       - name: Wait for container to start
         run: |
           echo "Waiting for container to pull image and start..."
@@ -169,6 +188,20 @@ jobs:
           done
           echo "❌ Health check failed after 10 attempts"
           exit 1
+
+      - name: Storefront health check
+        run: |
+          echo "Checking storefront health..."
+          for i in {1..10}; do
+            if curl -f -I https://storefront-medusashop-prod.azurewebsites.net/; then
+              echo "✅ Storefront health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "⚠️ Storefront health check failed after 10 attempts (non-critical)"
+          exit 0
 
       - name: Logout from Azure
         run: az logout

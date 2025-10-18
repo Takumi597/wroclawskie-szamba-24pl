@@ -78,6 +78,13 @@ variable "enable_read_replica" {
   default   = false
 }
 
+variable "medusa_publishable_key" {
+  description = "Medusa publishable API key for storefront - leave empty for initial deployment, set later via Azure CLI after getting key from admin dashboard"
+  type        = string
+  default     = "PLACEHOLDER_UPDATE_AFTER_DEPLOYMENT"
+  sensitive   = true
+}
+
 # Generate random strings for secrets
 resource "random_password" "jwt_secret" {
   length  = 64
@@ -417,10 +424,10 @@ resource "azurerm_linux_web_app" "main" {
     "JWT_SECRET"    = random_password.jwt_secret.result
     "COOKIE_SECRET" = random_password.cookie_secret.result
     
-    # CORS
-    "STORE_CORS"  = "*"
-    "ADMIN_CORS"  = "*"
-    "AUTH_CORS"   = "*"
+    # CORS - Allow storefront and admin dashboard
+    "STORE_CORS"  = "https://storefront-${var.project_name}-${var.environment}.azurewebsites.net"
+    "ADMIN_CORS"  = "https://app-${var.project_name}-${var.environment}.azurewebsites.net"
+    "AUTH_CORS"   = "https://storefront-${var.project_name}-${var.environment}.azurewebsites.net,https://app-${var.project_name}-${var.environment}.azurewebsites.net"
     
     # Medusa Configuration
     "NODE_ENV" = "production"
@@ -460,6 +467,81 @@ resource "azurerm_linux_web_app" "main" {
 resource "azurerm_app_service_virtual_network_swift_connection" "main" {
   app_service_id = azurerm_linux_web_app.main.id
   subnet_id      = azurerm_subnet.app_subnet.id
+}
+
+# Storefront App Service
+resource "azurerm_linux_web_app" "storefront" {
+  name                = "storefront-${var.project_name}-${var.environment}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  service_plan_id     = azurerm_service_plan.main.id
+  https_only          = true
+
+  site_config {
+    always_on = true
+
+    application_stack {
+      docker_image_name   = "storefront:latest"
+      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+    }
+
+    container_registry_use_managed_identity = true
+  }
+
+  app_settings = {
+    "WEBSITES_PORT"                = "8000"
+    "DOCKER_ENABLE_CI"             = "true"
+
+    # Medusa Backend URL (server-side only, used by middleware)
+    "MEDUSA_BACKEND_URL" = "https://${azurerm_linux_web_app.main.default_hostname}"
+
+    # Storefront Public Configuration (client-side accessible)
+    "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY" = var.medusa_publishable_key
+    "NEXT_PUBLIC_BASE_URL"               = "https://storefront-${var.project_name}-${var.environment}.azurewebsites.net"
+    "NEXT_PUBLIC_DEFAULT_REGION"         = "pl"
+
+    # Next.js Configuration
+    "REVALIDATE_SECRET"       = random_password.revalidate_secret.result
+    "NEXT_TELEMETRY_DISABLED" = "1"
+    "NODE_ENV"                = "production"
+
+    # Application Insights
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"      = azurerm_application_insights.main.connection_string
+    "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  logs {
+    application_logs {
+      file_system_level = "Information"
+    }
+
+    http_logs {
+      file_system {
+        retention_in_days = 7
+        retention_in_mb   = 35
+      }
+    }
+  }
+
+  depends_on = [azurerm_linux_web_app.main, azurerm_application_insights.main]
+  tags = azurerm_resource_group.main.tags
+}
+
+# Grant Storefront App Service access to ACR
+resource "azurerm_role_assignment" "storefront_acr_pull" {
+  scope                = azurerm_container_registry.main.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_linux_web_app.storefront.identity[0].principal_id
+}
+
+# Random password for Next.js revalidation secret
+resource "random_password" "revalidate_secret" {
+  length  = 32
+  special = true
 }
 
 # Outputs
@@ -532,4 +614,14 @@ output "acr_admin_password" {
 output "aci_subnet_id" {
   value = azurerm_subnet.aci_subnet.id
   description = "Subnet ID for Azure Container Instances"
+}
+
+output "storefront_url" {
+  value = "https://${azurerm_linux_web_app.storefront.default_hostname}"
+  description = "Storefront URL"
+}
+
+output "storefront_service_name" {
+  value = azurerm_linux_web_app.storefront.name
+  description = "Storefront App Service name"
 }
