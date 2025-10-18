@@ -60,6 +60,10 @@ HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhos
 
 # create non-root user
 RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
+
+# Change ownership of .next/static to nodeusr so the entrypoint can modify files
+RUN chown -R nodeusr:nodegrp /app/.next/static
+
 # drop privileges
 USER nodeusr
 
