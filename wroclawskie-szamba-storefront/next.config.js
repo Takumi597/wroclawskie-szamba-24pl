@@ -60,6 +60,21 @@ const nextConfig = {
         : []),
     ],
   },
+
+  // Prevent HTML caching to avoid stale chunk references
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate",
+          },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
