@@ -26,7 +26,10 @@ const Hero = () => {
           </Heading>
         </span>
         <audio src="/wrcszmb.mp3" loop controls playsInline />
-        <a href="https://github.com/wojtazk/wroclawskie-szamba" target="_blank">
+        <a
+          href="https://github.com/Takumi597/wroclawskie-szamba-24pl"
+          target="_blank"
+        >
           <Button variant="secondary">
             Obczaj na GitHub'ie
             <Github />
