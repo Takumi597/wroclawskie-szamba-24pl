@@ -1,22 +1,23 @@
 const c = require("ansi-colors")
 
 const requiredEnvs = [
-  {
-    key: "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY",
-    // TODO: we need a good doc to point this to
-    description:
-      "Learn how to create a publishable key: https://docs.medusajs.com/v2/resources/storefront-development/publishable-api-keys",
-  },
+  // {
+  //   key: "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY",
+  //   description:
+  //     "Learn how to create a publishable key: https://docs.medusajs.com/v2/resources/storefront-development/publishable-api-keys",
+  // },
 ]
 
 function checkEnvVariables() {
   // Skip validation during Docker builds (SKIP_REMOTE_FETCH is set in Dockerfile)
   // The actual environment variables will be injected at runtime by Azure App Service
-  if (process.env.SKIP_REMOTE_FETCH === "true") {
-    console.log("⚠️  Skipping environment validation during build (SKIP_REMOTE_FETCH=true)")
-    console.log("   Environment variables will be validated at runtime")
-    return
-  }
+  // if (process.env.SKIP_REMOTE_FETCH === "true") {
+  //   console.log(
+  //     "⚠️  Skipping environment validation during build (SKIP_REMOTE_FETCH=true)"
+  //   )
+  //   console.log("   Environment variables will be validated at runtime")
+  //   return
+  // }
 
   const missingEnvs = requiredEnvs.filter(function (env) {
     return !process.env[env.key]

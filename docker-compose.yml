@@ -60,9 +60,10 @@ services:
       - medusa
     ports:
       - '8000:8000'
-    # environment: # create the .env in storefronts' dir
     env_file:
       - ./wroclawskie-szamba-storefront/.env
+    # environment: # create the .env in storefronts' dir
+    #   - MEDUSA_PUBLISHABLE_KEY=pk_65c6941b8c7d142520bef6e985c884325630c9b111fc8ba7460d6e2ec6d7cbda
     networks:
       - medusa_network
 

@@ -34,7 +34,7 @@ echo ""
 az webapp config appsettings set \
   --name $STOREFRONT_NAME \
   --resource-group $RESOURCE_GROUP \
-  --settings NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY="$API_KEY" \
+  --settings MEDUSA_PUBLISHABLE_KEY="$API_KEY" \
   --output none
 
 echo "✅ API key updated successfully!"

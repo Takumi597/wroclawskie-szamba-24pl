@@ -496,7 +496,7 @@ resource "azurerm_linux_web_app" "storefront" {
     "MEDUSA_BACKEND_URL" = "https://${azurerm_linux_web_app.main.default_hostname}"
 
     # Storefront Public Configuration (client-side accessible)
-    "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY" = var.medusa_publishable_key
+    "MEDUSA_PUBLISHABLE_KEY" = var.medusa_publishable_key
     "NEXT_PUBLIC_BASE_URL"               = "https://storefront-${var.project_name}-${var.environment}.azurewebsites.net"
     "NEXT_PUBLIC_DEFAULT_REGION"         = "pl"
 
