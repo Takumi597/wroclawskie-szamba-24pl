@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS base
+FROM node:25-alpine AS base
 
 # Builder
 FROM base
