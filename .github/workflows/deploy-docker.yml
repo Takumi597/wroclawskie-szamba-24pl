@@ -193,7 +193,7 @@ jobs:
         run: |
           echo "Checking storefront health..."
           for i in {1..10}; do
-            if curl -f -I https://storefront-medusashop-prod.azurewebsites.net/; then
+            if curl -f -I https://storefront-medusashop2-prod.azurewebsites.net/; then
               echo "✅ Storefront health check passed!"
               exit 0
             fi
