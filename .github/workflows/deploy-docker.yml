@@ -73,7 +73,7 @@ jobs:
 
       - name: Build Medusa image
         run: |
-          docker build --pull --no-cache \
+          docker build \
             -f medusa.dockerfile \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
@@ -86,7 +86,7 @@ jobs:
 
       - name: Build DB Seeder image
         run: |
-          docker build --pull --no-cache \
+          docker build \
             -f db_seeder.dockerfile \
             -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest \
@@ -99,7 +99,7 @@ jobs:
 
       - name: Build Storefront image
         run: |
-          docker build --pull --no-cache \
+          docker build \
             -f storefront.dockerfile \
             -t ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/storefront:latest \

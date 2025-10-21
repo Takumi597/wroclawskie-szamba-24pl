@@ -23,7 +23,7 @@ Deploy a complete Medusa v2 e-commerce platform on Azure with private infrastruc
 ## Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Takumi597/wroclawskie-szamba-24pl
+git clone https://github.com/wojtazk/wroclawskie-szamba-24pl
 cd wroclawskie-szamba-24pl
 ```
 
@@ -32,6 +32,9 @@ cd wroclawskie-szamba-24pl
 ```bash
 # Login
 az login
+
+# List subscriptions
+az account list --output table
 
 # Set subscription
 az account set --subscription "<your-subscription-id>"
@@ -52,6 +55,7 @@ az ad sp create-for-rbac \
 Go to: Repository > Settings > Secrets and variables > Actions
 
 Add:
+
 - `AZURE_CREDENTIALS`: Entire JSON from Step 2
 - `AZURE_SUBSCRIPTION_ID`: Your subscription ID
 - `STAGING_URL`: `https://app-medusashop-prod.azurewebsites.net` (for DAST testing)
@@ -64,6 +68,7 @@ nano terraform.tfvars
 ```
 
 Add:
+
 ```hcl
 project_name = "medusashop"
 environment  = "prod"
@@ -131,6 +136,7 @@ Workflow does: SAST scan, build Docker images (medusa, storefront, db-seeder), p
 Takes ~10-15 minutes.
 
 **Verify:**
+
 ```bash
 curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
 ```
@@ -140,6 +146,7 @@ curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
 **Automatic**: GitHub Actions seeds database on deployment.
 
 **Manual** (if needed):
+
 ```bash
 ./run-seeder.sh
 ```
@@ -159,6 +166,7 @@ curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
    ```
 
 **Verify** (wait 60s):
+
 ```bash
 curl -I https://storefront-medusashop-prod.azurewebsites.net/  # Should return 200 OK
 ```
@@ -166,6 +174,7 @@ curl -I https://storefront-medusashop-prod.azurewebsites.net/  # Should return 2
 ## Step 10: Access Your Application
 
 **URLs:**
+
 - Storefront: https://storefront-medusashop-prod.azurewebsites.net/
 - Admin: https://app-medusashop-prod.azurewebsites.net/app
 - API: https://app-medusashop-prod.azurewebsites.net/store
@@ -183,6 +192,7 @@ curl -I https://storefront-medusashop-prod.azurewebsites.net/  # Should return 2
 **GitHub Actions Fails**: Check `AZURE_CREDENTIALS` and `AZURE_SUBSCRIPTION_ID` secrets
 
 **View Logs**:
+
 ```bash
 az webapp log tail --name app-medusashop-prod --resource-group rg-medusashop-prod
 ```
