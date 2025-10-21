@@ -2,9 +2,9 @@ name: Deploy Medusa to Azure (Docker)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -71,22 +71,22 @@ jobs:
         run: |
           az acr login --name ${{ env.ACR_NAME }}
 
-      - name: Build Docker image
+      - name: Build Medusa image
         run: |
-          docker build \
+          docker build --pull --no-cache \
             -f medusa.dockerfile \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
             .
 
-      - name: Push Docker image
+      - name: Push Medusa image
         run: |
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
       - name: Build DB Seeder image
         run: |
-          docker build \
+          docker build --pull --no-cache \
             -f db_seeder.dockerfile \
             -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest \
@@ -99,7 +99,7 @@ jobs:
 
       - name: Build Storefront image
         run: |
-          docker build \
+          docker build --pull --no-cache \
             -f storefront.dockerfile \
             -t ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/storefront:latest \

@@ -40,6 +40,7 @@ RUN npm ci --no-audit --no-fund --ignore-scripts --omit=dev
 
 COPY --from=builder --chown=root:root /app/public ./public
 COPY --from=builder --chown=root:root /app/.next ./.next
+COPY --from=builder --chown=root:root /app/next.config.js ./
 
 # healthcheck
 HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhost:${PORT} || exit 1
