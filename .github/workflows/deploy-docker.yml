@@ -62,6 +62,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -71,44 +74,41 @@ jobs:
         run: |
           az acr login --name ${{ env.ACR_NAME }}
 
-      - name: Build Medusa image
-        run: |
-          docker build \
-            -f medusa.dockerfile \
-            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
-            .
+      - name: Build and push Medusa image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./medusa.dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Push Medusa image
-        run: |
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+      - name: Build and push DB Seeder image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./db_seeder.dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Build DB Seeder image
-        run: |
-          docker build \
-            -f db_seeder.dockerfile \
-            -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }} \
-            -t ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest \
-            .
-
-      - name: Push DB Seeder image
-        run: |
-          docker push ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }}
-          docker push ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest
-
-      - name: Build Storefront image
-        run: |
-          docker build --no-cache --pull \
-            -f storefront.dockerfile \
-            -t ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }} \
-            -t ${{ env.ACR_NAME }}.azurecr.io/storefront:latest \
-            .
-
-      - name: Push Storefront image
-        run: |
-          docker push ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }}
-          docker push ${{ env.ACR_NAME }}.azurecr.io/storefront:latest
+      - name: Build and push Storefront image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./storefront.dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/storefront:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Logout from Azure
         run: az logout
