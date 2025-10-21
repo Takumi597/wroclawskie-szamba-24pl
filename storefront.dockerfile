@@ -32,21 +32,21 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8000
 
+# create non-root user
+RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
+
 # copy the artifacts from builder
-COPY --from=builder --chown=root:root /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/package.json /app/package-lock.json ./
 
 # install production dependencies
 RUN npm install --no-audit --no-fund --ignore-scripts --omit=dev
 
-COPY --from=builder --chown=root:root /app/public ./public
-COPY --from=builder --chown=root:root /app/.next ./.next
-COPY --from=builder --chown=root:root /app/next.config.js ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/next.config.js ./
 
 # healthcheck
 HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhost:${PORT} || exit 1
-
-# create non-root user
-RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
 
 # drop privileges
 USER nodeusr
