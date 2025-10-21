@@ -11,7 +11,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --chown=root:root --chmod=644 wroclawskie-szamba-storefront/package.json wroclawskie-szamba-storefront/package-lock.json ./
 
 # install dependencies
-RUN npm ci --no-audit --no-fund --ignore-scripts
+RUN npm install --no-audit --no-fund --ignore-scripts
 
 COPY --chown=root:root wroclawskie-szamba-storefront/ ./
 
@@ -36,7 +36,7 @@ ENV PORT=8000
 COPY --from=builder --chown=root:root /app/package.json /app/package-lock.json ./
 
 # install production dependencies
-RUN npm ci --no-audit --no-fund --ignore-scripts --omit=dev
+RUN npm install --no-audit --no-fund --ignore-scripts --omit=dev
 
 COPY --from=builder --chown=root:root /app/public ./public
 COPY --from=builder --chown=root:root /app/.next ./.next
