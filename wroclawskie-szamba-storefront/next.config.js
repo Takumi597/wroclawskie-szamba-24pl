@@ -1,6 +1,5 @@
-const checkEnvVariables = require("./check-env-variables")
-
-checkEnvVariables()
+// const checkEnvVariables = require("./check-env-variables")
+// checkEnvVariables()
 
 /**
  * Medusa Cloud-related environment variables
@@ -25,6 +24,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "http",
