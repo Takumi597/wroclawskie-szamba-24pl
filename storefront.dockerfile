@@ -32,9 +32,6 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8000
 
-# create non-root user
-RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
-
 # copy the artifacts from builder
 COPY --from=builder /app/package.json /app/package-lock.json ./
 
@@ -47,9 +44,6 @@ COPY --from=builder /app/next.config.js ./
 
 # healthcheck
 HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhost:${PORT} || exit 1
-
-# drop privileges
-USER nodeusr
 
 # expose storefront's port
 EXPOSE 8000
