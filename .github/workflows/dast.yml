@@ -1,0 +1,31 @@
+name: Dast Scanning
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Job 1: DAST - Dynamic Application Security Testing (on staging)
+  dast:
+    name: DAST Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: ${{ secrets.STAGING_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+          fail_action: false
+          allow_issue_writing: false
+
+      - name: SSL Labs Security Check
+        run: |
+          docker run --rm ssllabs/ssllabs-scan \
+            --grade=B \
+            --verbosity=info \
+            ${{ secrets.STAGING_URL }}
+        continue-on-error: true
