@@ -15,14 +15,11 @@ module.exports = defineConfig({
       jwtSecret: process.env.JWT_SECRET || 'supersecret',
       cookieSecret: process.env.COOKIE_SECRET || 'supersecret',
     },
-    databaseDriverOptions:
-      process.env.NODE_ENV === 'production'
-        ? {
-            connection: {
-              ssl: { rejectUnauthorized: false },
-            },
-          }
-        : { ssl: false, sslmode: 'disable' },
+    databaseDriverOptions: {
+      connection: {
+        ssl: { rejectUnauthorized: false },
+      },
+    },
 
     cookieOptions: {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
