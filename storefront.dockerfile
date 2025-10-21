@@ -8,12 +8,12 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 
-COPY --chown=root:root --chmod=644 wroclawskie-szamba-storefront/package.json wroclawskie-szamba-storefront/package-lock.json ./
+COPY wroclawskie-szamba-storefront/package.json wroclawskie-szamba-storefront/package-lock.json ./
 
 # install dependencies
 RUN npm install --no-audit --no-fund --ignore-scripts
 
-COPY --chown=root:root wroclawskie-szamba-storefront/ ./
+COPY wroclawskie-szamba-storefront/ ./
 
 RUN npm run build
 
