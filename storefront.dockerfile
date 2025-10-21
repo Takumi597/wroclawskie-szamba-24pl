@@ -18,6 +18,8 @@ RUN npm install --no-audit --no-fund --ignore-scripts
 
 COPY wroclawskie-szamba-storefront/ ./
 
+RUN npm run build
+
 # Prune dev dependencies for production
 # RUN npm prune --omit=dev
 
@@ -28,4 +30,4 @@ HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhos
 EXPOSE 8000
 
 # start server directly
-CMD ["sh", "-c", "npm run build && npm run start"]
+CMD ["npm", "run", "start"]
