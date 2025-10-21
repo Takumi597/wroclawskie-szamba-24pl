@@ -99,7 +99,7 @@ jobs:
 
       - name: Build Storefront image
         run: |
-          docker build \
+          docker build --no-cache --pull \
             -f storefront.dockerfile \
             -t ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/storefront:latest \
