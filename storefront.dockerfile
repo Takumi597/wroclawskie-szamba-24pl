@@ -20,39 +20,41 @@ RUN npm run build
 # Prune dev dependencies for production
 # RUN npm prune --omit=dev
 
+CMD ["npm", "run", "dev"]
+
 # Runtime
-FROM base AS runtime
+# FROM base AS runtime
 
-# install curl for healthchecks
-RUN apk add --no-cache curl
+# # install curl for healthchecks
+# RUN apk add --no-cache curl
 
-WORKDIR /app
+# WORKDIR /app
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=8000
+# ENV NODE_ENV=production
+# ENV NEXT_TELEMETRY_DISABLED=1
+# ENV PORT=8000
 
-# copy the artifacts from builder
-COPY --from=builder --chown=root:root /app/package.json /app/package-lock.json ./
+# # copy the artifacts from builder
+# COPY --from=builder --chown=root:root /app/package.json /app/package-lock.json ./
 
-# install production dependencies
-RUN npm install --no-audit --no-fund --ignore-scripts --omit=dev
+# # install production dependencies
+# RUN npm install --no-audit --no-fund --ignore-scripts --omit=dev
 
-COPY --from=builder --chown=root:root /app/public ./public
-COPY --from=builder --chown=root:root /app/.next ./.next
-COPY --from=builder --chown=root:root /app/next.config.js ./
+# COPY --from=builder --chown=root:root /app/public ./public
+# COPY --from=builder --chown=root:root /app/.next ./.next
+# COPY --from=builder --chown=root:root /app/next.config.js ./
 
-# healthcheck
-HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhost:${PORT} || exit 1
+# # healthcheck
+# HEALTHCHECK --interval=60s --timeout=30s --retries=5 CMD curl -f http://localhost:${PORT} || exit 1
 
-# create non-root user
-RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
+# # create non-root user
+# RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
 
-# drop privileges
-USER nodeusr
+# # drop privileges
+# USER nodeusr
 
-# expose storefront's port
-EXPOSE 8000
+# # expose storefront's port
+# EXPOSE 8000
 
-# start server directly
-CMD ["npm", "run", "start"]
+# # start server directly
+# CMD ["npm", "run", "start"]
