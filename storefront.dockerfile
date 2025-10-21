@@ -1,6 +1,6 @@
 FROM node:lts-alpine AS base
 
-FROM base AS builder
+FROM base
 
 # install curl for healthchecks
 RUN apk add --no-cache curl
