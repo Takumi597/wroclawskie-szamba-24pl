@@ -79,29 +79,35 @@ export class AzureBlobFileService extends AbstractFileProviderService {
       this.containerClient_.getBlockBlobClient(fileKey)
 
     try {
+      let buffer: Buffer
+
       if (Buffer.isBuffer(file.content)) {
-        await blockBlobClient.upload(file.content, file.content.length, {
-          blobHTTPHeaders: {
-            blobContentType: file.mimeType,
-            blobCacheControl: this.options_.cache_control,
-          },
-        })
+        buffer = file.content
       } else if (typeof (file.content as any)?.pipe === 'function') {
+        // Handle stream uploads
         await blockBlobClient.uploadStream(file.content as unknown as Readable, undefined, undefined, {
           blobHTTPHeaders: {
             blobContentType: file.mimeType,
             blobCacheControl: this.options_.cache_control,
           },
         })
+        return {
+          url: blockBlobClient.url,
+          key: fileKey,
+        }
+      } else if (typeof file.content === 'string') {
+        // Content is a string - convert to binary without encoding
+        buffer = Buffer.from(file.content, 'binary')
       } else {
-        const buffer = Buffer.from(file.content)
-        await blockBlobClient.upload(buffer, buffer.length, {
-          blobHTTPHeaders: {
-            blobContentType: file.mimeType,
-            blobCacheControl: this.options_.cache_control,
-          },
-        })
+        throw new Error(`Unsupported file content type: ${typeof file.content}`)
       }
+
+      await blockBlobClient.upload(buffer, buffer.length, {
+        blobHTTPHeaders: {
+          blobContentType: file.mimeType,
+          blobCacheControl: this.options_.cache_control,
+        },
+      })
 
       return {
         url: blockBlobClient.url,
