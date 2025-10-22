@@ -86,8 +86,8 @@ export class AzureBlobFileService extends AbstractFileProviderService {
             blobCacheControl: this.options_.cache_control,
           },
         })
-      } else if (file.content instanceof Readable) {
-        await blockBlobClient.uploadStream(file.content, undefined, undefined, {
+      } else if (typeof (file.content as any)?.pipe === 'function') {
+        await blockBlobClient.uploadStream(file.content as Readable, undefined, undefined, {
           blobHTTPHeaders: {
             blobContentType: file.mimeType,
             blobCacheControl: this.options_.cache_control,
@@ -150,7 +150,7 @@ export class AzureBlobFileService extends AbstractFileProviderService {
 
       const expiresOn = new Date()
       expiresOn.setSeconds(
-        expiresOn.getSeconds() + this.options_.download_url_duration
+        expiresOn.getSeconds() + (this.options_.download_url_duration || 3600)
       )
 
       const sasUrl = await blockBlobClient.generateSasUrl({
@@ -168,7 +168,7 @@ export class AzureBlobFileService extends AbstractFileProviderService {
   }
 
   async getAsStream(
-    file: ProviderDeleteFileDTO
+    file: ProviderGetFileDTO
   ): Promise<Readable> {
     try {
       const blockBlobClient = this.containerClient_.getBlockBlobClient(
@@ -191,7 +191,7 @@ export class AzureBlobFileService extends AbstractFileProviderService {
   }
 
   async getAsBuffer(
-    file: ProviderDeleteFileDTO
+    file: ProviderGetFileDTO
   ): Promise<Buffer> {
     try {
       const blockBlobClient = this.containerClient_.getBlockBlobClient(
