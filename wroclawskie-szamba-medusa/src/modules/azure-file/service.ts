@@ -87,7 +87,7 @@ export class AzureBlobFileService extends AbstractFileProviderService {
           },
         })
       } else if (typeof (file.content as any)?.pipe === 'function') {
-        await blockBlobClient.uploadStream(file.content as Readable, undefined, undefined, {
+        await blockBlobClient.uploadStream(file.content as unknown as Readable, undefined, undefined, {
           blobHTTPHeaders: {
             blobContentType: file.mimeType,
             blobCacheControl: this.options_.cache_control,
