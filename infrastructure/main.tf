@@ -386,7 +386,7 @@ resource "azurerm_linux_web_app" "main" {
 
   site_config {
     always_on                               = var.environment == "prod" ? true : false
-    app_command_line                        = "cd server && npm run predeploy && npm run start"
+    app_command_line                        = "npm run predeploy && npm run start"
     http2_enabled                           = true
     ftps_state                              = "Disabled"
     minimum_tls_version                     = "1.2"
