@@ -23,7 +23,6 @@ async function getRegionMap(cacheId: string) {
     !regionMap.keys().next().value ||
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
-    // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
     const { regions } = await fetch(`${BACKEND_URL}/store/regions`, {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_API_KEY!,
@@ -49,7 +48,6 @@ async function getRegionMap(cacheId: string) {
       )
     }
 
-    // Create a map of country codes to regions.
     regions.forEach((region: HttpTypes.StoreRegion) => {
       region.countries?.forEach((c) => {
         regionMapCache.regionMap.set(c.iso_2 ?? "", region)
@@ -62,11 +60,6 @@ async function getRegionMap(cacheId: string) {
   return regionMapCache.regionMap
 }
 
-/**
- * Fetches regions from Medusa and sets the region cookie.
- * @param request
- * @param response
- */
 async function getCountryCode(
   request: NextRequest,
   regionMap: Map<string, HttpTypes.StoreRegion | number>
@@ -100,9 +93,6 @@ async function getCountryCode(
   }
 }
 
-/**
- * Middleware to handle region selection and onboarding status.
- */
 export async function middleware(request: NextRequest) {
   let redirectUrl = request.nextUrl.href
 
@@ -133,7 +123,6 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // check if the url is a static asset
   if (request.nextUrl.pathname.includes(".")) {
     return NextResponse.next()
   }
@@ -143,12 +132,10 @@ export async function middleware(request: NextRequest) {
 
   const queryString = request.nextUrl.search ? request.nextUrl.search : ""
 
-  // If no country code is set, we redirect to the relevant region.
   if (!urlHasCountryCode && countryCode) {
     redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
     response = NextResponse.redirect(`${redirectUrl}`, 307)
   } else if (!urlHasCountryCode && !countryCode) {
-    // Handle case where no valid country code exists (empty regions)
     return new NextResponse(
       "No valid regions configured. Please set up regions with countries in your Medusa Admin.",
       { status: 500 }
@@ -160,6 +147,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
+    "/((?!api|_next|favicon.ico|sitemap.xml|robots.txt|.*\\..*).*)",
   ],
 }

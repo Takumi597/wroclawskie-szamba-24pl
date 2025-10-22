@@ -4,7 +4,6 @@ set -e
 echo "=== Update Storefront API Key ==="
 echo ""
 
-# Check if API key was provided as argument
 if [ -z "$1" ]; then
   echo "Usage: ./update-storefront-api-key.sh <publishable-api-key>"
   echo ""
@@ -18,10 +17,9 @@ if [ -z "$1" ]; then
 fi
 
 API_KEY="$1"
-RESOURCE_GROUP="rg-medusashop2-prod"
-STOREFRONT_NAME="storefront-medusashop2-prod"
+RESOURCE_GROUP="rg-medusashop-prod"
+STOREFRONT_NAME="storefront-medusashop-prod"
 
-# Validate API key format
 if [[ ! "$API_KEY" =~ ^pk_ ]]; then
   echo "❌ Error: Invalid API key format. Key should start with 'pk_'"
   exit 1
@@ -30,7 +28,6 @@ fi
 echo "Updating storefront with API key: ${API_KEY:0:10}..."
 echo ""
 
-# Update the app setting
 az webapp config appsettings set \
   --name $STOREFRONT_NAME \
   --resource-group $RESOURCE_GROUP \
@@ -41,7 +38,6 @@ echo "✅ API key updated successfully!"
 echo ""
 echo "Restarting storefront to apply changes..."
 
-# Restart the storefront
 az webapp restart \
   --name $STOREFRONT_NAME \
   --resource-group $RESOURCE_GROUP \
@@ -49,5 +45,5 @@ az webapp restart \
 
 echo "✅ Storefront restarted!"
 echo ""
-echo "Wait 30-60 seconds, then visit: https://storefront-medusashop2-prod.azurewebsites.net/"
+echo "Wait 30-60 seconds, then visit: https://storefront-medusashop-prod.azurewebsites.net/"
 echo ""

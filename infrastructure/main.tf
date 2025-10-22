@@ -23,7 +23,6 @@ provider "azurerm" {
   }
 }
 
-# Variables
 variable "project_name" {
   description = "Project name used for resource naming"
   type        = string
@@ -85,7 +84,6 @@ variable "medusa_publishable_key" {
   sensitive   = true
 }
 
-# Generate random strings for secrets
 resource "random_password" "jwt_secret" {
   length  = 64
   special = true
@@ -96,7 +94,6 @@ resource "random_password" "cookie_secret" {
   special = true
 }
 
-# Resource Group
 resource "azurerm_resource_group" "main" {
   name     = "rg-${var.project_name}-${var.environment}"
   location = var.location
@@ -108,7 +105,6 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-# Virtual Network
 resource "azurerm_virtual_network" "main" {
   name                = "vnet-${var.project_name}-${var.environment}"
   location            = azurerm_resource_group.main.location
@@ -118,7 +114,6 @@ resource "azurerm_virtual_network" "main" {
   tags = azurerm_resource_group.main.tags
 }
 
-# Subnet for App Service
 resource "azurerm_subnet" "app_subnet" {
   name                 = "snet-app"
   resource_group_name  = azurerm_resource_group.main.name
@@ -135,7 +130,6 @@ resource "azurerm_subnet" "app_subnet" {
   depends_on = [azurerm_virtual_network.main]
 }
 
-# Subnet for Database
 resource "azurerm_subnet" "db_subnet" {
   name                 = "snet-db"
   resource_group_name  = azurerm_resource_group.main.name
@@ -154,7 +148,6 @@ resource "azurerm_subnet" "db_subnet" {
   depends_on = [azurerm_virtual_network.main]
 }
 
-# Subnet for Redis
 resource "azurerm_subnet" "redis_subnet" {
   name                 = "snet-redis"
   resource_group_name  = azurerm_resource_group.main.name
@@ -162,7 +155,6 @@ resource "azurerm_subnet" "redis_subnet" {
   address_prefixes     = ["10.0.3.0/24"]
 }
 
-# Subnet for Container Instances
 resource "azurerm_subnet" "aci_subnet" {
   name                 = "snet-aci"
   resource_group_name  = azurerm_resource_group.main.name
@@ -181,7 +173,6 @@ resource "azurerm_subnet" "aci_subnet" {
   depends_on = [azurerm_virtual_network.main]
 }
 
-# Network Security Group for App
 resource "azurerm_network_security_group" "app_nsg" {
   name                = "nsg-app-${var.project_name}"
   location            = azurerm_resource_group.main.location
@@ -214,7 +205,6 @@ resource "azurerm_network_security_group" "app_nsg" {
   tags = azurerm_resource_group.main.tags
 }
 
-# PostgreSQL Flexible Server
 resource "azurerm_postgresql_flexible_server" "main" {
   name                   = "psql-${var.project_name}-${var.environment}"
   resource_group_name    = azurerm_resource_group.main.name
@@ -258,7 +248,6 @@ resource "azurerm_postgresql_flexible_server" "replica" {
   tags = merge(azurerm_resource_group.main.tags,{ Role = "ReadReplica" })
 }
 
-# PostgreSQL Database
 resource "azurerm_postgresql_flexible_server_database" "medusa" {
   name      = "medusa"
   server_id = azurerm_postgresql_flexible_server.main.id
@@ -266,7 +255,6 @@ resource "azurerm_postgresql_flexible_server_database" "medusa" {
   collation = "en_US.utf8"
 }
 
-# Private DNS Zone for PostgreSQL
 resource "azurerm_private_dns_zone" "postgres" {
   name                = "privatelink.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.main.name
@@ -274,7 +262,6 @@ resource "azurerm_private_dns_zone" "postgres" {
   tags = azurerm_resource_group.main.tags
 }
 
-# Link DNS Zone to VNet
 resource "azurerm_private_dns_zone_virtual_network_link" "postgres" {
   name                  = "postgres-dns-link"
   resource_group_name   = azurerm_resource_group.main.name
@@ -284,7 +271,6 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres" {
   tags = azurerm_resource_group.main.tags
 }
 
-# Redis Cache
 resource "azurerm_redis_cache" "main" {
   name                = "redis-${var.project_name}-${var.environment}"
   location            = azurerm_resource_group.main.location
@@ -294,7 +280,6 @@ resource "azurerm_redis_cache" "main" {
   sku_name            = "Basic"
   non_ssl_port_enabled = false
   minimum_tls_version = "1.2"
-  # subnet_id           = azurerm_subnet.redis_subnet.id
 
   redis_configuration {
     authentication_enabled = true
@@ -303,7 +288,6 @@ resource "azurerm_redis_cache" "main" {
   tags = azurerm_resource_group.main.tags
 }
 
-# Storage Account for product images
 resource "azurerm_storage_account" "main" {
   name                     = "st${var.project_name}${var.environment}"
   resource_group_name      = azurerm_resource_group.main.name
@@ -325,25 +309,22 @@ resource "azurerm_storage_account" "main" {
   tags = azurerm_resource_group.main.tags
 }
 
-# Storage Container
 resource "azurerm_storage_container" "uploads" {
   name                  = "uploads"
   storage_account_name  = azurerm_storage_account.main.name
   container_access_type = "blob"
 }
 
-# Azure Container Registry for Docker images
 resource "azurerm_container_registry" "main" {
   name                = "acr${var.project_name}${var.environment}"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  sku                 = "Basic"  # Use Basic for student subscription (Standard for production)
-  admin_enabled       = true     # Enable admin user for CI/CD
+  sku                 = "Basic"
+  admin_enabled       = true
 
   tags = azurerm_resource_group.main.tags
 }
 
-# Log Analytics Workspace
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "log-${var.project_name}-${var.environment}"
   location            = azurerm_resource_group.main.location
@@ -354,7 +335,6 @@ resource "azurerm_log_analytics_workspace" "main" {
   tags = azurerm_resource_group.main.tags
 }
 
-# Application Insights
 resource "azurerm_application_insights" "main" {
   name                = "appi-${var.project_name}-${var.environment}"
   location            = azurerm_resource_group.main.location
@@ -365,7 +345,6 @@ resource "azurerm_application_insights" "main" {
   tags = azurerm_resource_group.main.tags
 }
 
-# App Service Plan (B2 for production, B1 for dev)
 resource "azurerm_service_plan" "main" {
   name                = "asp-${var.project_name}-${var.environment}"
   resource_group_name = azurerm_resource_group.main.name
@@ -376,7 +355,6 @@ resource "azurerm_service_plan" "main" {
   tags = azurerm_resource_group.main.tags
 }
 
-# App Service for Medusa
 resource "azurerm_linux_web_app" "main" {
   name                = "app-${var.project_name}-${var.environment}"
   resource_group_name = azurerm_resource_group.main.name
@@ -408,37 +386,29 @@ resource "azurerm_linux_web_app" "main" {
 
   app_settings = {
     "WEBSITES_PORT"                = "9000"
-    "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
-    "WORKER_MODE"                  = "server"  # Run in server mode (handles API + background tasks)
+    "DOCKER_ENABLE_CI"             = "true"
+    "WORKER_MODE"                  = "server"
 
-    # DNS Configuration for Private DNS Zone resolution
-    "WEBSITE_DNS_SERVER"           = "168.63.129.16"  # Azure DNS server required for private DNS zones
+    "WEBSITE_DNS_SERVER"           = "168.63.129.16"
 
-    # Database
     "DATABASE_URL" = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.medusa.name}"
-    
-    # Redis
+
     "REDIS_URL" = "rediss://:${azurerm_redis_cache.main.primary_access_key}@${azurerm_redis_cache.main.hostname}:${azurerm_redis_cache.main.ssl_port}/0"
-    
-    # Secrets
+
     "JWT_SECRET"    = random_password.jwt_secret.result
     "COOKIE_SECRET" = random_password.cookie_secret.result
-    
-    # CORS - Allow storefront and admin dashboard
+
     "STORE_CORS"  = "https://storefront-${var.project_name}-${var.environment}.azurewebsites.net"
     "ADMIN_CORS"  = "https://app-${var.project_name}-${var.environment}.azurewebsites.net"
     "AUTH_CORS"   = "https://storefront-${var.project_name}-${var.environment}.azurewebsites.net,https://app-${var.project_name}-${var.environment}.azurewebsites.net"
-    
-    # Medusa Configuration
+
     "NODE_ENV" = "production"
     "MEDUSA_BACKEND_URL" = "https://app-${var.project_name}-${var.environment}.azurewebsites.net"
-    
-    # Storage
+
     "AZURE_STORAGE_ACCOUNT_NAME" = azurerm_storage_account.main.name
     "AZURE_STORAGE_ACCOUNT_KEY"  = azurerm_storage_account.main.primary_access_key
     "AZURE_STORAGE_CONTAINER"    = azurerm_storage_container.uploads.name
-    
-    # Application Insights
+
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
     "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
   }
@@ -463,13 +433,11 @@ resource "azurerm_linux_web_app" "main" {
   tags = azurerm_resource_group.main.tags
 }
 
-# VNet Integration for App Service
 resource "azurerm_app_service_virtual_network_swift_connection" "main" {
   app_service_id = azurerm_linux_web_app.main.id
   subnet_id      = azurerm_subnet.app_subnet.id
 }
 
-# Storefront App Service
 resource "azurerm_linux_web_app" "storefront" {
   name                = "storefront-${var.project_name}-${var.environment}"
   location            = azurerm_resource_group.main.location
@@ -492,20 +460,16 @@ resource "azurerm_linux_web_app" "storefront" {
     "WEBSITES_PORT"                = "8000"
     "DOCKER_ENABLE_CI"             = "true"
 
-    # Medusa Backend URL (server-side only, used by middleware)
     "MEDUSA_BACKEND_URL" = "https://${azurerm_linux_web_app.main.default_hostname}"
 
-    # Storefront Public Configuration (client-side accessible)
     "MEDUSA_PUBLISHABLE_KEY" = var.medusa_publishable_key
     "NEXT_PUBLIC_BASE_URL"               = "https://storefront-${var.project_name}-${var.environment}.azurewebsites.net"
     "NEXT_PUBLIC_DEFAULT_REGION"         = "pl"
 
-    # Next.js Configuration
     "REVALIDATE_SECRET"       = random_password.revalidate_secret.result
     "NEXT_TELEMETRY_DISABLED" = "1"
     "NODE_ENV"                = "production"
 
-    # Application Insights
     "APPLICATIONINSIGHTS_CONNECTION_STRING"      = azurerm_application_insights.main.connection_string
     "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
   }
@@ -531,20 +495,17 @@ resource "azurerm_linux_web_app" "storefront" {
   tags = azurerm_resource_group.main.tags
 }
 
-# Grant Storefront App Service access to ACR
 resource "azurerm_role_assignment" "storefront_acr_pull" {
   scope                = azurerm_container_registry.main.id
   role_definition_name = "AcrPull"
   principal_id         = azurerm_linux_web_app.storefront.identity[0].principal_id
 }
 
-# Random password for Next.js revalidation secret
 resource "random_password" "revalidate_secret" {
   length  = 32
   special = true
 }
 
-# Outputs
 output "app_service_name" {
   value = azurerm_linux_web_app.main.name
 }

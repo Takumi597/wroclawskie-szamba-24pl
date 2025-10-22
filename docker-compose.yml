@@ -1,5 +1,4 @@
 services:
-  # postgres
   postgres:
     image: postgres:15-alpine
     container_name: medusa_postgres
@@ -15,7 +14,6 @@ services:
     networks:
       - medusa_network
 
-  # redis
   redis:
     image: redis:8-alpine
     container_name: medusa_redis
@@ -25,7 +23,6 @@ services:
     networks:
       - medusa_network
 
-  # medusa
   medusa:
     build:
       context: .
@@ -62,8 +59,6 @@ services:
       - '8000:8000'
     env_file:
       - ./wroclawskie-szamba-storefront/.env
-    # environment: # create the .env in storefronts' dir
-    #   - MEDUSA_PUBLISHABLE_KEY=pk_65c6941b8c7d142520bef6e985c884325630c9b111fc8ba7460d6e2ec6d7cbda
     networks:
       - medusa_network
 

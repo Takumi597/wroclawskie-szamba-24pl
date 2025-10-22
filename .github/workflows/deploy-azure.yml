@@ -8,12 +8,11 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: 'app-medusashop2-prod'
-  ACR_NAME: 'acrmedusashop2prod'
+  AZURE_WEBAPP_NAME: 'app-medusashop-prod'
+  ACR_NAME: 'acrmedusashopprod'
   IMAGE_NAME: 'medusa'
 
 jobs:
-  # Job 1: SAST - Static Application Security Testing
   sast:
     name: SAST Scanning
     runs-on: ubuntu-latest
@@ -77,7 +76,6 @@ jobs:
             exit 1
           fi
 
-  # Job 2: Build and Push Docker Image
   build-and-push:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
@@ -139,7 +137,6 @@ jobs:
         run: az logout
         if: always()
 
-  # Job 3: Deploy to Azure
   deploy:
     name: Deploy to Azure App Service
     runs-on: ubuntu-latest
@@ -159,17 +156,17 @@ jobs:
         run: |
           az webapp restart \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group rg-medusashop2-prod
+            --resource-group rg-medusashop-prod
 
       - name: Restart Storefront App Service to pull latest image
         run: |
           az webapp restart \
-            --name storefront-medusashop2-prod \
-            --resource-group rg-medusashop2-prod
+            --name storefront-medusashop-prod \
+            --resource-group rg-medusashop-prod
 
       - name: Wait for container to start
         run: |
-          echo "Waiting for container to pull image and start..."
+          echo "Waiting for container to pull and start..."
           sleep 90
 
       - name: Health check
@@ -190,7 +187,7 @@ jobs:
         run: |
           echo "Checking storefront health..."
           for i in {1..10}; do
-            if curl -f -I https://storefront-medusashop2-prod.azurewebsites.net/; then
+            if curl -f -I https://storefront-medusashop-prod.azurewebsites.net/; then
               echo "✅ Storefront health check passed!"
               exit 0
             fi
@@ -204,7 +201,6 @@ jobs:
         run: az logout
         if: always()
 
-  # Job 4: Post-deployment security monitoring
   security-monitoring:
     name: Configure Security Monitoring
     runs-on: ubuntu-latest
@@ -221,8 +217,8 @@ jobs:
         id: get-appinsights
         run: |
           WORKSPACE_ID=$(az monitor app-insights component show \
-            --app appi-medusashop2-prod \
-            --resource-group rg-medusashop2-prod \
+            --app appi-medusashop-prod \
+            --resource-group rg-medusashop-prod \
             --query "workspaceResourceId" -o tsv)
           echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
 
@@ -230,7 +226,7 @@ jobs:
         run: |
           az monitor scheduled-query create \
             --name "high-failed-login-attempts" \
-            --resource-group rg-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count > 10" \
             --condition-query "requests | where resultCode == 401 | summarize AggregatedValue=count()" \
@@ -245,7 +241,7 @@ jobs:
         run: |
           az monitor scheduled-query create \
             --name "unusual-traffic-pattern" \
-            --resource-group rg-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count > 1000" \
             --condition-query "requests | summarize AggregatedValue=count()" \

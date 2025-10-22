@@ -4,11 +4,10 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: 'app-medusashop2-prod'
-  ACR_NAME: 'acrmedusashop2prod'
+  AZURE_WEBAPP_NAME: 'app-medusashop-prod'
+  ACR_NAME: 'acrmedusashopprod'
 
 jobs:
-  # Job 5: Seed Database
   seed-database:
     name: Seed Database
     runs-on: ubuntu-latest
@@ -24,13 +23,13 @@ jobs:
         run: |
           DATABASE_URL=$(az webapp config appsettings list \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group rg-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
             --query "[?name=='DATABASE_URL'].value | [0]" \
             -o tsv)
 
           REDIS_URL=$(az webapp config appsettings list \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group rg-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
             --query "[?name=='REDIS_URL'].value | [0]" \
             -o tsv)
 
@@ -41,11 +40,11 @@ jobs:
         id: get-acr
         run: |
           ACR_USERNAME=$(az rest --method post \
-            --uri "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop2-prod/providers/Microsoft.ContainerRegistry/registries/${{ env.ACR_NAME }}/listCredentials?api-version=2023-01-01-preview" \
+            --uri "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-prod/providers/Microsoft.ContainerRegistry/registries/${{ env.ACR_NAME }}/listCredentials?api-version=2023-01-01-preview" \
             --query "username" -o tsv)
 
           ACR_PASSWORD=$(az rest --method post \
-            --uri "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop2-prod/providers/Microsoft.ContainerRegistry/registries/${{ env.ACR_NAME }}/listCredentials?api-version=2023-01-01-preview" \
+            --uri "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-medusashop-prod/providers/Microsoft.ContainerRegistry/registries/${{ env.ACR_NAME }}/listCredentials?api-version=2023-01-01-preview" \
             --query "passwords[0].value" -o tsv)
 
           echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
@@ -56,14 +55,14 @@ jobs:
         id: get-subnet
         run: |
           SUBNET_ID=$(az network vnet subnet show \
-            --resource-group rg-medusashop2-prod \
-            --vnet-name vnet-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
+            --vnet-name vnet-medusashop-prod \
             --name snet-aci \
             --query "id" -o tsv)
 
           LOCATION=$(az network vnet show \
-            --resource-group rg-medusashop2-prod \
-            --name vnet-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
+            --name vnet-medusashop-prod \
             --query "location" -o tsv)
 
           echo "subnet_id=$SUBNET_ID" >> $GITHUB_OUTPUT
@@ -75,7 +74,7 @@ jobs:
 
           echo "Creating seeder container in location ${{ steps.get-subnet.outputs.location }}..."
           az container create \
-            --resource-group rg-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
             --name $CONTAINER_NAME \
             --image ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest \
             --os-type Linux \
@@ -97,7 +96,7 @@ jobs:
           ATTEMPT=0
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             STATE=$(az container show \
-              --resource-group rg-medusashop2-prod \
+              --resource-group rg-medusashop-prod \
               --name $CONTAINER_NAME \
               --query "instanceView.state" -o tsv 2>/dev/null || echo "Unknown")
 
@@ -113,12 +112,12 @@ jobs:
 
           echo "Seeder logs:"
           az container logs \
-            --resource-group rg-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
             --name $CONTAINER_NAME
 
           echo "Cleaning up container..."
           az container delete \
-            --resource-group rg-medusashop2-prod \
+            --resource-group rg-medusashop-prod \
             --name $CONTAINER_NAME \
             --yes
 

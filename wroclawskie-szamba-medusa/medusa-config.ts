@@ -35,13 +35,15 @@ module.exports = defineConfig({
       options: {
         providers: [
           {
-            resolve: '@medusajs/medusa/file-local',
-            id: 'local',
+            resolve: './src/modules/azure-file',
+            id: 'azure-blob',
             options: {
-              upload_dir: 'static',
-              backend_url: process.env.MEDUSA_BACKEND_URL
-                ? `${process.env.MEDUSA_BACKEND_URL}/static`
-                : 'http://localhost:9000/static',
+              account_name: process.env.AZURE_STORAGE_ACCOUNT_NAME,
+              account_key: process.env.AZURE_STORAGE_ACCOUNT_KEY,
+              container_name: process.env.AZURE_STORAGE_CONTAINER || 'uploads',
+              prefix: 'medusa',
+              cache_control: 'public, max-age=31536000',
+              download_url_duration: 3600,
             },
           },
         ],
