@@ -78,10 +78,11 @@ variable "enable_read_replica" {
   default   = false
 }
 
+# you should change this in you medusa instance (hardcoded for deploy convenience)
 variable "medusa_publishable_key" {
   description = "Medusa publishable API key for storefront - leave empty for initial deployment, set later via Azure CLI after getting key from admin dashboard"
   type        = string
-  default     = "PLACEHOLDER_UPDATE_AFTER_DEPLOYMENT"
+  default     = "pk_41ddb5727a5562335b4955fc36e837c036902761bc887be97fd16dd7f93085b7"
   sensitive   = true
 }
 
@@ -386,6 +387,7 @@ resource "azurerm_linux_web_app" "main" {
 
   site_config {
     always_on                               = var.environment == "prod" ? true : false
+    app_command_line                        = "./node_modules/@medusajs/cli/cli.js db:migrate && ./node_modules/@medusajs/cli/cli.js start"
     http2_enabled                           = true
     ftps_state                              = "Disabled"
     minimum_tls_version                     = "1.2"
@@ -394,10 +396,11 @@ resource "azurerm_linux_web_app" "main" {
     health_check_eviction_time_in_min       = 2
 
     application_stack {
-      docker_image_name   = "medusa:latest"
-      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
-      docker_registry_username = azurerm_container_registry.main.admin_username
-      docker_registry_password = azurerm_container_registry.main.admin_password
+      # docker_image_name   = "medusa:latest"
+      # docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      # docker_registry_username = azurerm_container_registry.main.admin_username
+      # docker_registry_password = azurerm_container_registry.main.admin_password
+      node_version = "20-lts"
     }
 
     cors {
@@ -408,7 +411,7 @@ resource "azurerm_linux_web_app" "main" {
 
   app_settings = {
     "WEBSITES_PORT"                = "9000"
-    "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
+    # "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
     "WORKER_MODE"                  = "server"  # Run in server mode (handles API + background tasks)
 
     # DNS Configuration for Private DNS Zone resolution
@@ -431,6 +434,7 @@ resource "azurerm_linux_web_app" "main" {
     
     # Medusa Configuration
     "NODE_ENV" = "production"
+    "MEDUSA_DISABLE_TELEMETRY" = "true"
     "MEDUSA_BACKEND_URL" = "https://app-${var.project_name}-${var.environment}.azurewebsites.net"
     
     # Storage
@@ -479,18 +483,21 @@ resource "azurerm_linux_web_app" "storefront" {
 
   site_config {
     always_on = true
+    app_command_line = "./node_modules/next/dist/bin/next start -p $PORT"
 
     application_stack {
-      docker_image_name   = "storefront:latest"
-      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      #docker_image_name   = "storefront:latest"
+      #docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      node_version = "20-lts"
     }
 
-    container_registry_use_managed_identity = true
+    #container_registry_use_managed_identity = true
   }
 
   app_settings = {
-    "WEBSITES_PORT"                = "8000"
-    "DOCKER_ENABLE_CI"             = "true"
+    "WEBSITES_PORT"                   = "8000"
+    # "SCM_DO_BUILD_DURING_DEPLOYMENT"  = "true"
+    # "DOCKER_ENABLE_CI"              = "true"
 
     # Medusa Backend URL (server-side only, used by middleware)
     "MEDUSA_BACKEND_URL" = "https://${azurerm_linux_web_app.main.default_hostname}"
@@ -532,11 +539,11 @@ resource "azurerm_linux_web_app" "storefront" {
 }
 
 # Grant Storefront App Service access to ACR
-resource "azurerm_role_assignment" "storefront_acr_pull" {
-  scope                = azurerm_container_registry.main.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_linux_web_app.storefront.identity[0].principal_id
-}
+# resource "azurerm_role_assignment" "storefront_acr_pull" {
+#   scope                = azurerm_container_registry.main.id
+#   role_definition_name = "AcrPull"
+#   principal_id         = azurerm_linux_web_app.storefront.identity[0].principal_id
+# }
 
 # Random password for Next.js revalidation secret
 resource "random_password" "revalidate_secret" {

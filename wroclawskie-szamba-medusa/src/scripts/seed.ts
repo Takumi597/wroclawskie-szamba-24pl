@@ -62,7 +62,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
             is_default: true,
           },
           {
-            currency_code: 'usd',
+            currency_code: 'eur',
           },
         ],
         default_sales_channel_id: defaultSalesChannel[0].id,
@@ -73,6 +73,12 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const { result: regionResult } = await createRegionsWorkflow(container).run({
     input: {
       regions: [
+        {
+          name: 'Poland',
+          currency_code: 'pln',
+          countries,
+          payment_providers: ['pp_system_default'],
+        },
         {
           name: 'Europe',
           currency_code: 'eur',
@@ -216,7 +222,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
         },
         prices: [
           {
-            currency_code: 'usd',
+            currency_code: 'pln',
             amount: 10,
           },
           {
@@ -298,7 +304,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       api_keys: [
         {
-          title: 'Webshop',
+          title: 'Wroclawskie Szamba Storefront Key',
           type: 'publishable',
           created_by: '',
         },
@@ -309,7 +315,8 @@ export default async function seedDemoData({ container }: ExecArgs) {
 
   await linkSalesChannelsToApiKeyWorkflow(container).run({
     input: {
-      id: publishableApiKey.id,
+      // id: publishableApiKey.id,
+      id: 'pk_41ddb5727a5562335b4955fc36e837c036902761bc887be97fd16dd7f93085b7', // hardcoded for convenience, do not tell anyone :)
       add: [defaultSalesChannel[0].id],
     },
   });

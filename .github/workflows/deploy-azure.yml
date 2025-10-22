@@ -8,9 +8,11 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: 'app-medusashop2-prod'
   ACR_NAME: 'acrmedusashop2prod'
-  IMAGE_NAME: 'medusa'
+  AZURE_WEBAPP_NAME_MEDUSA: 'app-medusashop2-prod'
+  IMAGE_NAME_MEDUSA: 'medusa'
+  AZURE_WEBAPP_NAME_STOREFRONT: 'storefront-medusashop2-prod'
+  NODE_VERSION: 'lts/*'
 
 jobs:
   # Job 1: SAST - Static Application Security Testing
@@ -77,9 +79,9 @@ jobs:
             exit 1
           fi
 
-  # Job 2: Build and Push Docker Image
-  build-and-push:
-    name: Build & Push Docker Image
+  # Job 4: Build and Deploy Medusa Backend
+  deploy_medusa:
+    name: Build & Deploy Medusa Backend
     runs-on: ubuntu-latest
     needs: sast
 
@@ -87,129 +89,73 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login to Azure Container Registry
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Build Medusa
         run: |
-          az acr login --name ${{ env.ACR_NAME }}
+          npm ci
+          npm run build
+          cd .medusa/server
+          npm ci
+        working-directory: wroclawskie-szamba-medusa
 
-      - name: Build and push Medusa image
-        uses: docker/build-push-action@v5
+      # Deploy web app by using Azure credentials
+      - uses: azure/webapps-deploy@v3
         with:
-          context: .
-          file: ./medusa.dockerfile
-          push: true
-          tags: |
-            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push DB Seeder image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./db_seeder.dockerfile
-          push: true
-          tags: |
-            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }}
-            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push Storefront image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./storefront.dockerfile
-          push: true
-          tags: |
-            ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }}
-            ${{ env.ACR_NAME }}.azurecr.io/storefront:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          app-name: ${{ env.AZURE_WEBAPP_NAME_MEDUSA }}
+          package: wroclawskie-szamba-medusa/.medusa/server
 
       - name: Logout from Azure
         run: az logout
-        if: always()
 
-  # Job 3: Deploy to Azure
-  deploy:
-    name: Deploy to Azure App Service
+  # Job 4: Build and Deploy Storefront
+  deploy_storefront:
+    name: Build & Deploy Storefront
     runs-on: ubuntu-latest
-    needs: [sast, build-and-push]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment:
-      name: 'production'
-      url: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+    needs: sast
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Restart App Service to pull latest image
-        run: |
-          az webapp restart \
-            --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group rg-medusashop2-prod
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Restart Storefront App Service to pull latest image
+      - name: Build Storefront
         run: |
-          az webapp restart \
-            --name storefront-medusashop2-prod \
-            --resource-group rg-medusashop2-prod
+          npm ci
+          npm run build
+        working-directory: wroclawskie-szamba-storefront
 
-      - name: Wait for container to start
-        run: |
-          echo "Waiting for container to pull image and start..."
-          sleep 90
-
-      - name: Health check
-        run: |
-          echo "Checking application health..."
-          for i in {1..10}; do
-            if curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health; then
-              echo "✅ Health check passed!"
-              exit 0
-            fi
-            echo "Attempt $i failed, retrying in 10s..."
-            sleep 10
-          done
-          echo "❌ Health check failed after 10 attempts"
-          exit 1
-
-      - name: Storefront health check
-        run: |
-          echo "Checking storefront health..."
-          for i in {1..10}; do
-            if curl -f -I https://storefront-medusashop2-prod.azurewebsites.net/; then
-              echo "✅ Storefront health check passed!"
-              exit 0
-            fi
-            echo "Attempt $i failed, retrying in 10s..."
-            sleep 10
-          done
-          echo "⚠️ Storefront health check failed after 10 attempts (non-critical)"
-          exit 0
+      # Deploy web app by using Azure credentials
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME_STOREFRONT }}
+          package: wroclawskie-szamba-storefront
 
       - name: Logout from Azure
         run: az logout
-        if: always()
 
   # Job 4: Post-deployment security monitoring
   security-monitoring:
     name: Configure Security Monitoring
     runs-on: ubuntu-latest
-    needs: deploy
-    if: github.ref == 'refs/heads/main'
+    needs: [deploy_medusa, deploy_storefront]
 
     steps:
       - name: Login to Azure
@@ -258,4 +204,3 @@ jobs:
 
       - name: Logout from Azure
         run: az logout
-        if: always()
