@@ -18,8 +18,8 @@ if [ -z "$1" ]; then
 fi
 
 API_KEY="$1"
-RESOURCE_GROUP="rg-medusashop-prod"
-STOREFRONT_NAME="storefront-medusashop-prod"
+RESOURCE_GROUP="rg-medusashop2-prod"
+STOREFRONT_NAME="storefront-medusashop2-prod"
 
 # Validate API key format
 if [[ ! "$API_KEY" =~ ^pk_ ]]; then
@@ -49,5 +49,5 @@ az webapp restart \
 
 echo "✅ Storefront restarted!"
 echo ""
-echo "Wait 30-60 seconds, then visit: https://storefront-medusashop-prod.azurewebsites.net/"
+echo "Wait 30-60 seconds, then visit: https://storefront-medusashop2-prod.azurewebsites.net/"
 echo ""

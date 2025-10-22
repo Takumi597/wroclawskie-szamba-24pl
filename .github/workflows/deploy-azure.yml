@@ -1,0 +1,261 @@
+name: Deploy Medusa to Azure (Docker)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: 'app-medusashop2-prod'
+  ACR_NAME: 'acrmedusashop2prod'
+  IMAGE_NAME: 'medusa'
+
+jobs:
+  # Job 1: SAST - Static Application Security Testing
+  sast:
+    name: SAST Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run npm audit on medusa
+        run: |
+          cd wroclawskie-szamba-medusa
+          npm audit --audit-level=high --json > ../audit-results.json || true
+          cat ../audit-results.json
+        continue-on-error: true
+
+      - name: Check for critical vulnerabilities
+        run: |
+          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+
+          echo "Critical vulnerabilities: $CRITICAL"
+          echo "High vulnerabilities: $HIGH"
+
+          if [ "$CRITICAL" -gt "0" ]; then
+            echo "❌ CRITICAL vulnerabilities found! Check failed."
+            exit 1
+          fi
+
+          if [ "$HIGH" -gt "100" ]; then
+            echo "⚠️  Too many HIGH vulnerabilities found! Check failed."
+            exit 1
+          fi
+
+      - name: Run npm audit on storefront
+        run: |
+          cd wroclawskie-szamba-storefront
+          npm audit --audit-level=high --json > ../audit-results.json || true
+          cat ../audit-results.json
+        continue-on-error: true
+
+      - name: Check for critical vulnerabilities
+        run: |
+          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+
+          echo "Critical vulnerabilities: $CRITICAL"
+          echo "High vulnerabilities: $HIGH"
+
+          if [ "$CRITICAL" -gt "0" ]; then
+            echo "❌ CRITICAL vulnerabilities found! Check failed."
+            exit 1
+          fi
+
+          if [ "$HIGH" -gt "10" ]; then
+            echo "⚠️  Too many HIGH vulnerabilities found! Check failed."
+            exit 1
+          fi
+
+  # Job 2: Build and Push Docker Image
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: sast
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and push Medusa image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./medusa.dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push DB Seeder image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./db_seeder.dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Storefront image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./storefront.dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/storefront:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/storefront:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Logout from Azure
+        run: az logout
+        if: always()
+
+  # Job 3: Deploy to Azure
+  deploy:
+    name: Deploy to Azure App Service
+    runs-on: ubuntu-latest
+    needs: [sast, build-and-push]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: 'production'
+      url: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Restart App Service to pull latest image
+        run: |
+          az webapp restart \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group rg-medusashop2-prod
+
+      - name: Restart Storefront App Service to pull latest image
+        run: |
+          az webapp restart \
+            --name storefront-medusashop2-prod \
+            --resource-group rg-medusashop2-prod
+
+      - name: Wait for container to start
+        run: |
+          echo "Waiting for container to pull image and start..."
+          sleep 90
+
+      - name: Health check
+        run: |
+          echo "Checking application health..."
+          for i in {1..10}; do
+            if curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Health check failed after 10 attempts"
+          exit 1
+
+      - name: Storefront health check
+        run: |
+          echo "Checking storefront health..."
+          for i in {1..10}; do
+            if curl -f -I https://storefront-medusashop2-prod.azurewebsites.net/; then
+              echo "✅ Storefront health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "⚠️ Storefront health check failed after 10 attempts (non-critical)"
+          exit 0
+
+      - name: Logout from Azure
+        run: az logout
+        if: always()
+
+  # Job 4: Post-deployment security monitoring
+  security-monitoring:
+    name: Configure Security Monitoring
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get Application Insights workspace ID
+        id: get-appinsights
+        run: |
+          WORKSPACE_ID=$(az monitor app-insights component show \
+            --app appi-medusashop2-prod \
+            --resource-group rg-medusashop2-prod \
+            --query "workspaceResourceId" -o tsv)
+          echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
+
+      - name: Create alert for failed login attempts
+        run: |
+          az monitor scheduled-query create \
+            --name "high-failed-login-attempts" \
+            --resource-group rg-medusashop2-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count > 10" \
+            --condition-query "requests | where resultCode == 401 | summarize AggregatedValue=count()" \
+            --description "Alert when failed login attempts (401) exceed threshold" \
+            --evaluation-frequency 5m \
+            --window-size 5m \
+            --severity 2 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
+      - name: Create alert for unusual traffic
+        run: |
+          az monitor scheduled-query create \
+            --name "unusual-traffic-pattern" \
+            --resource-group rg-medusashop2-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count > 1000" \
+            --condition-query "requests | summarize AggregatedValue=count()" \
+            --description "Alert on unusual traffic spikes" \
+            --evaluation-frequency 5m \
+            --window-size 5m \
+            --severity 3 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
+      - name: Logout from Azure
+        run: az logout
+        if: always()

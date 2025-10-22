@@ -4,17 +4,12 @@ WORKDIR /app
 
 ENV MEDUSA_DISABLE_TELEMETRY=true
 
-COPY --chown=root:root --chmod=644 wroclawskie-szamba-medusa/package.json wroclawskie-szamba-medusa/package-lock.json ./
+COPY wroclawskie-szamba-medusa/package.json wroclawskie-szamba-medusa/package-lock.json ./
 
 # install dependencies
 RUN npm install --no-audit --no-fund --ignore-scripts
 
-COPY --chown=root:root --chmod=755 db_seed.sh ./
-COPY --chown=root:root wroclawskie-szamba-medusa/ ./
-
-# create non-root user
-RUN addgroup -S nodegrp && adduser -S nodeusr -G nodegrp
-# drop privileges
-USER nodeusr
+COPY db_seed.sh ./
+COPY wroclawskie-szamba-medusa/ ./
 
 CMD ["sh", "db_seed.sh"]
