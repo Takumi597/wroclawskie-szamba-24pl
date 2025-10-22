@@ -386,6 +386,7 @@ resource "azurerm_linux_web_app" "main" {
 
   site_config {
     always_on                               = var.environment == "prod" ? true : false
+    app_command_line                        = "cd server && npm run predeploy && npm run start"
     http2_enabled                           = true
     ftps_state                              = "Disabled"
     minimum_tls_version                     = "1.2"
@@ -394,10 +395,11 @@ resource "azurerm_linux_web_app" "main" {
     health_check_eviction_time_in_min       = 2
 
     application_stack {
-      docker_image_name   = "medusa:latest"
-      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
-      docker_registry_username = azurerm_container_registry.main.admin_username
-      docker_registry_password = azurerm_container_registry.main.admin_password
+      # docker_image_name   = "medusa:latest"
+      # docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      # docker_registry_username = azurerm_container_registry.main.admin_username
+      # docker_registry_password = azurerm_container_registry.main.admin_password
+      node_version = "20-lts"
     }
 
     cors {
@@ -408,7 +410,7 @@ resource "azurerm_linux_web_app" "main" {
 
   app_settings = {
     "WEBSITES_PORT"                = "9000"
-    "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
+    # "DOCKER_ENABLE_CI"             = "true"  # Enable continuous deployment from ACR
     "WORKER_MODE"                  = "server"  # Run in server mode (handles API + background tasks)
 
     # DNS Configuration for Private DNS Zone resolution
@@ -431,6 +433,7 @@ resource "azurerm_linux_web_app" "main" {
     
     # Medusa Configuration
     "NODE_ENV" = "production"
+    "MEDUSA_DISABLE_TELEMETRY" = "true"
     "MEDUSA_BACKEND_URL" = "https://app-${var.project_name}-${var.environment}.azurewebsites.net"
     
     # Storage
