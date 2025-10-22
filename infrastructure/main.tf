@@ -479,6 +479,7 @@ resource "azurerm_linux_web_app" "storefront" {
 
   site_config {
     always_on = true
+    app_command_line = "npm run start"
 
     application_stack {
       #docker_image_name   = "storefront:latest"
