@@ -104,7 +104,7 @@ jobs:
           npm ci
           npm run build
           cd .medusa/server
-          npm install
+          npm ci
         working-directory: wroclawskie-szamba-medusa
 
       # Deploy web app by using Azure credentials
