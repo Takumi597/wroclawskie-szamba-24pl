@@ -23,7 +23,7 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
-    "@azure/storage-blob": "^12.24.0",
+    "@azure/storage-blob": "^12.29.1",
     "@medusajs/admin-sdk": "2.10.3",
     "@medusajs/cli": "2.10.3",
     "@medusajs/framework": "2.10.3",
