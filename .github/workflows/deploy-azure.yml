@@ -186,9 +186,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: 'npm install, build, and test'
+      - name: Build Storefront
         run: |
-          npm install
+          npm ci
           npm run build
         working-directory: wroclawskie-szamba-storefront
 
