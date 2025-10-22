@@ -8,6 +8,44 @@ env:
   ACR_NAME: 'acrmedusashopprod'
 
 jobs:
+  # Job 1: Build and Push Docker Image
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and push DB Seeder image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./db_seeder.dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/db-seeder:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Logout from Azure
+        run: az logout
+        if: always()
+
+  # Job 2: Seed Database
   seed-database:
     name: Seed Database
     runs-on: ubuntu-latest
