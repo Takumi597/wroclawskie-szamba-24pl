@@ -479,7 +479,7 @@ resource "azurerm_linux_web_app" "storefront" {
 
   site_config {
     always_on = true
-    app_command_line = "npm run start"
+    app_command_line = "./node_modules/next/dist/bin/next start -p $PORT"
 
     application_stack {
       #docker_image_name   = "storefront:latest"
@@ -492,7 +492,7 @@ resource "azurerm_linux_web_app" "storefront" {
 
   app_settings = {
     "WEBSITES_PORT"                   = "8000"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT"  = "true"
+    # "SCM_DO_BUILD_DURING_DEPLOYMENT"  = "true"
     # "DOCKER_ENABLE_CI"              = "true"
 
     # Medusa Backend URL (server-side only, used by middleware)
