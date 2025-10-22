@@ -491,8 +491,9 @@ resource "azurerm_linux_web_app" "storefront" {
   }
 
   app_settings = {
-    "WEBSITES_PORT"                = "8000"
-    # "DOCKER_ENABLE_CI"             = "true"
+    "WEBSITES_PORT"                   = "8000"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT"  = "true"
+    # "DOCKER_ENABLE_CI"              = "true"
 
     # Medusa Backend URL (server-side only, used by middleware)
     "MEDUSA_BACKEND_URL" = "https://${azurerm_linux_web_app.main.default_hostname}"
