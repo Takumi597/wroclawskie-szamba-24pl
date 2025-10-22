@@ -481,16 +481,17 @@ resource "azurerm_linux_web_app" "storefront" {
     always_on = true
 
     application_stack {
-      docker_image_name   = "storefront:latest"
-      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      #docker_image_name   = "storefront:latest"
+      #docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      node_version = "20-lts"
     }
 
-    container_registry_use_managed_identity = true
+    #container_registry_use_managed_identity = true
   }
 
   app_settings = {
     "WEBSITES_PORT"                = "8000"
-    "DOCKER_ENABLE_CI"             = "true"
+    # "DOCKER_ENABLE_CI"             = "true"
 
     # Medusa Backend URL (server-side only, used by middleware)
     "MEDUSA_BACKEND_URL" = "https://${azurerm_linux_web_app.main.default_hostname}"
@@ -532,11 +533,11 @@ resource "azurerm_linux_web_app" "storefront" {
 }
 
 # Grant Storefront App Service access to ACR
-resource "azurerm_role_assignment" "storefront_acr_pull" {
-  scope                = azurerm_container_registry.main.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_linux_web_app.storefront.identity[0].principal_id
-}
+# resource "azurerm_role_assignment" "storefront_acr_pull" {
+#   scope                = azurerm_container_registry.main.id
+#   role_definition_name = "AcrPull"
+#   principal_id         = azurerm_linux_web_app.storefront.identity[0].principal_id
+# }
 
 # Random password for Next.js revalidation secret
 resource "random_password" "revalidate_secret" {
