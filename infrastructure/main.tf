@@ -78,10 +78,11 @@ variable "enable_read_replica" {
   default   = false
 }
 
+# you should change this in you medusa instance (hardcoded for deploy convenience)
 variable "medusa_publishable_key" {
   description = "Medusa publishable API key for storefront - leave empty for initial deployment, set later via Azure CLI after getting key from admin dashboard"
   type        = string
-  default     = "PLACEHOLDER_UPDATE_AFTER_DEPLOYMENT"
+  default     = "pk_41ddb5727a5562335b4955fc36e837c036902761bc887be97fd16dd7f93085b7"
   sensitive   = true
 }
 
@@ -386,7 +387,7 @@ resource "azurerm_linux_web_app" "main" {
 
   site_config {
     always_on                               = var.environment == "prod" ? true : false
-    app_command_line                        = "npm run predeploy && npm run start"
+    app_command_line                        = "./node_modules/@medusajs/cli/cli.js db:migrate && ./node_modules/@medusajs/cli/cli.js start"
     http2_enabled                           = true
     ftps_state                              = "Disabled"
     minimum_tls_version                     = "1.2"
