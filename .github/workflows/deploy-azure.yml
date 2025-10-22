@@ -190,7 +190,7 @@ jobs:
         run: |
           npm install
           npm run build
-        working-directory: my-app-path
+        working-directory: wroclawskie-szamba-storefront
 
       # Deploy web app by using Azure credentials
       - uses: azure/webapps-deploy@v3
