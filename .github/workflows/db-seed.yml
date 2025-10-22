@@ -33,8 +33,30 @@ jobs:
             --query "[?name=='REDIS_URL'].value | [0]" \
             -o tsv)
 
+          AZURE_STORAGE_ACCOUNT_NAME=$(az webapp config appsettings list \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group rg-medusashop-prod \
+            --query "[?name=='AZURE_STORAGE_ACCOUNT_NAME'].value | [0]" \
+            -o tsv)
+
+          AZURE_STORAGE_ACCOUNT_KEY=$(az webapp config appsettings list \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group rg-medusashop-prod \
+            --query "[?name=='AZURE_STORAGE_ACCOUNT_KEY'].value | [0]" \
+            -o tsv)
+
+          AZURE_STORAGE_CONTAINER=$(az webapp config appsettings list \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group rg-medusashop-prod \
+            --query "[?name=='AZURE_STORAGE_CONTAINER'].value | [0]" \
+            -o tsv)
+
           echo "database_url=$DATABASE_URL" >> $GITHUB_OUTPUT
           echo "redis_url=$REDIS_URL" >> $GITHUB_OUTPUT
+          echo "azure_storage_account_name=$AZURE_STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+          echo "::add-mask::$AZURE_STORAGE_ACCOUNT_KEY"
+          echo "azure_storage_account_key=$AZURE_STORAGE_ACCOUNT_KEY" >> $GITHUB_OUTPUT
+          echo "azure_storage_container=$AZURE_STORAGE_CONTAINER" >> $GITHUB_OUTPUT
 
       - name: Get ACR credentials
         id: get-acr
@@ -85,6 +107,9 @@ jobs:
             --environment-variables \
               DATABASE_URL="${{ steps.get-config.outputs.database_url }}" \
               REDIS_URL="${{ steps.get-config.outputs.redis_url }}" \
+              AZURE_STORAGE_ACCOUNT_NAME="${{ steps.get-config.outputs.azure_storage_account_name }}" \
+              AZURE_STORAGE_ACCOUNT_KEY="${{ steps.get-config.outputs.azure_storage_account_key }}" \
+              AZURE_STORAGE_CONTAINER="${{ steps.get-config.outputs.azure_storage_container }}" \
               NODE_ENV=production \
             --restart-policy Never \
             --cpu 1 \
