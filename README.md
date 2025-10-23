@@ -44,7 +44,7 @@ Deploy a complete Medusa v2 e-commerce platform on Azure with private infrastruc
 ### Architecture
 
 - **Backend App Service**: Medusa v2 API (https://app-medusasho2p-prod.azurewebsites.net)
-- **Storefront App Service**: Next.js customer-facing shop (https://storefront-medusashop2-prod.azurewebsites.net)
+- **Storefront App Service**: Next.js customer-facing shop (https://storefront-medusashop-prod.azurewebsites.net)
 - **Azure Container Registry**: Private Docker images
 - **PostgreSQL Flexible Server**: Private database (VNet-only, no public access)
 - **Redis Cache**: SSL-encrypted cache
@@ -90,7 +90,7 @@ Add:
 
 - `AZURE_CREDENTIALS`: Entire JSON from Step 2
 - `AZURE_SUBSCRIPTION_ID`: Your subscription ID
-- `STAGING_URL`: `https://app-medusashop2-prod.azurewebsites.net` (for DAST testing)
+- `STAGING_URL`: `https://app-medusashop-prod.azurewebsites.net` (for DAST testing)
 
 ### Step 4: Terraform Configuration
 
@@ -102,7 +102,7 @@ nano terraform.tfvars
 Add:
 
 ```hcl
-project_name = "medusashop2"
+project_name = "medusashop"
 environment  = "prod"
 location     = "polandcentral"
 postgres_admin_password = "YourSecurePassword123!"  # Change this!
@@ -143,13 +143,13 @@ az rest --method put \
 
 # Apply VNet integration (wait 2 min after extensions)
 az webapp vnet-integration add \
-  --name app-medusashop2-prod \
-  --resource-group rg-medusashop2-prod \
-  --vnet vnet-medusashop2-prod \
+  --name app-medusashop-prod \
+  --resource-group rg-medusashop-prod \
+  --vnet vnet-medusashop-prod \
   --subnet snet-app
 
 # Restart backend
-az webapp restart --name app-medusashop2-prod --resource-group rg-medusashop2-prod
+az webapp restart --name app-medusashop-prod --resource-group rg-medusashop-prod
 ```
 
 ### Step 7: Deploy via GitHub Actions
@@ -172,7 +172,7 @@ Takes ~10-15 minutes.
 **Verify:**
 
 ```bash
-curl https://app-medusashop2-prod.azurewebsites.net/health  # Should return: OK
+curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
 ```
 
 ### Step 8: Database Seeding (Optional)
@@ -208,16 +208,16 @@ curl https://app-medusashop2-prod.azurewebsites.net/health  # Should return: OK
 **Verify** (wait for a while):
 
 ```bash
-curl -I https://storefront-medusashop2-prod.azurewebsites.net/  # Should return 200 OK
+curl -I https://storefront-medusashop-prod.azurewebsites.net/  # Should return 200 OK
 ```
 
 ### Step 10: Access Your Application
 
 **URLs:**
 
-- Storefront: https://storefront-medusashop2-prod.azurewebsites.net/
-- Admin: https://app-medusashop2-prod.azurewebsites.net/app
-- API: https://app-medusashop2-prod.azurewebsites.net/store
+- Storefront: https://storefront-medusashop-prod.azurewebsites.net/
+- Admin: https://app-medusashop-prod.azurewebsites.net/app
+- API: https://app-medusashop-prod.azurewebsites.net/store
 
 **Admin Login:** User can be created with db-seeder (Check database seeding)
 
@@ -236,5 +236,5 @@ curl -I https://storefront-medusashop2-prod.azurewebsites.net/  # Should return 
 **View Logs**:
 
 ```bash
-az webapp log tail --name app-medusashop2-prod --resource-group rg-medusashop2-prod
+az webapp log tail --name app-medusashop-prod --resource-group rg-medusashop-prod
 ```
