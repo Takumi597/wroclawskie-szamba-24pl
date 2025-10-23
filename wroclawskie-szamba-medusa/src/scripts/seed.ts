@@ -74,12 +74,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       regions: [
         {
-          name: 'Poland',
-          currency_code: 'pln',
-          countries,
-          payment_providers: ['pp_system_default'],
-        },
-        {
           name: 'Europe',
           currency_code: 'eur',
           countries,
@@ -315,8 +309,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
 
   await linkSalesChannelsToApiKeyWorkflow(container).run({
     input: {
-      // id: publishableApiKey.id,
-      id: 'pk_41ddb5727a5562335b4955fc36e837c036902761bc887be97fd16dd7f93085b7', // hardcoded for convenience, do not tell anyone :)
+      id: publishableApiKey.id,
       add: [defaultSalesChannel[0].id],
     },
   });

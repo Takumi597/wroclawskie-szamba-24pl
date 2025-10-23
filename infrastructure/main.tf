@@ -81,7 +81,7 @@ variable "enable_read_replica" {
 variable "medusa_publishable_key" {
   description = "Medusa publishable API key for storefront - leave empty for initial deployment, set later via Azure CLI after getting key from admin dashboard"
   type        = string
-  default     = "pk_41ddb5727a5562335b4955fc36e837c036902761bc887be97fd16dd7f93085b7"
+  default     = "PLACEHOLDER_UPDATE_AFTER_DEPLOYMENT"
   sensitive   = true
 }
 

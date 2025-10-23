@@ -30,6 +30,8 @@
 
 It is also possible to deploy the apps as docker containers, buuuut, figure it out on your own, you're a big boy.
 
+Check out the initial `wroclawskie-szamba` setup 😵‍💫: https://github.com/wojtazk/wroclawskie-szamba/
+
 ## Azure Guide
 
 Deploy a complete Medusa v2 e-commerce platform on Azure with private infrastructure.
@@ -43,7 +45,7 @@ Deploy a complete Medusa v2 e-commerce platform on Azure with private infrastruc
 
 ### Architecture
 
-- **Backend App Service**: Medusa v2 API (https://app-medusasho2p-prod.azurewebsites.net)
+- **Backend App Service**: Medusa v2 API (https://app-medusashop-prod.azurewebsites.net)
 - **Storefront App Service**: Next.js customer-facing shop (https://storefront-medusashop-prod.azurewebsites.net)
 - **Azure Container Registry**: Private Docker images
 - **PostgreSQL Flexible Server**: Private database (VNet-only, no public access)
@@ -55,7 +57,7 @@ Deploy a complete Medusa v2 e-commerce platform on Azure with private infrastruc
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/wojtazk/wroclawskie-szamba-24pl
+git clone https://github.com/Takumi597/wroclawskie-szamba-24pl.git
 cd wroclawskie-szamba-24pl
 ```
 
@@ -186,8 +188,6 @@ curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
 ```
 
 **Admin Credentials:** `admin@medusajs.com` / `supersecret` (change after first login!)
-
-**Default Publishable API Key**: `pk_41ddb5727a5562335b4955fc36e837c036902761bc887be97fd16dd7f93085b7` (change after first login!)
 
 ### Step 9: Configure Storefront
 
