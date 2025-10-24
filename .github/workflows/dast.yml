@@ -25,6 +25,7 @@ jobs:
           cmd_options: '-a'
           fail_action: false
           allow_issue_writing: false
+          artifact_name: 'zap-scan-results'
 
       - name: SSL Labs Security Check
         run: |
