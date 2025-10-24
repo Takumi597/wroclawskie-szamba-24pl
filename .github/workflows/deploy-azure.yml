@@ -176,7 +176,7 @@ jobs:
             --name "high-failed-login-attempts" \
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
-            --condition "count 'AggregatedValue' > 10" \
+            --condition "AggregatedValue > 10" \
             --condition-query "requests | where resultCode == 401 | summarize AggregatedValue=count()" \
             --description "Alert when failed login attempts (401) exceed threshold" \
             --evaluation-frequency 5m \
@@ -191,7 +191,7 @@ jobs:
             --name "unusual-traffic-pattern" \
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
-            --condition "count 'AggregatedValue' > 1000" \
+            --condition "AggregatedValue > 1000" \
             --condition-query "requests | summarize AggregatedValue=count()" \
             --description "Alert on unusual traffic spikes" \
             --evaluation-frequency 5m \
