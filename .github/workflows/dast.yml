@@ -20,7 +20,7 @@ jobs:
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.10.0
         with:
-          target: ${{ secrets.STAGING_URL }}
+          target: 'https://localhost2137.xyz'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
           fail_action: false
@@ -31,5 +31,5 @@ jobs:
           docker run --rm ssllabs/ssllabs-scan \
             --grade=B \
             --verbosity=info \
-            ${{ secrets.STAGING_URL }}
+            https://localhost2137.xyz
         continue-on-error: true

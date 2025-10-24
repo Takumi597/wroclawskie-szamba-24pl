@@ -1,0 +1,74 @@
+PIPELINE WDROŻENIA APLIKACJI
+
+=== 1. SETUP AZURE ===
+
+az login
+cd infrastructure
+terraform init
+terraform apply
+
+=== 2. GITHUB SECRETS ===
+
+GitHub → Settings → Secrets → dodaj:
+- AZURE_CREDENTIALS
+- AZURE_SUBSCRIPTION_ID
+
+=== 3. DEPLOY APLIKACJI ===
+
+git push origin main
+
+GitHub Actions automatycznie:
+- SAST (npm audit)
+- Build i deploy backend + frontend
+- Testy DAST (OWASP ZAP)
+
+Czas: ~25 min
+
+=== 4. SEEDING BAZY ===
+
+GitHub → Actions → "Database Seeder" → Run
+
+Login: admin@medusajs.com / supersecret
+
+=== 5. KLUCZ API STOREFRONT ===
+
+1. https://admin.localhost2137.xyz/app
+2. Settings → Publishable API Keys → Create
+3. ./update-storefront-api-key.sh pk_...
+
+=== 6. CLOUDFLARE + DOMENA ===
+
+DNS (Cloudflare):
+CNAME @ → storefront-medusashop-prod.azurewebsites.net (Proxied)
+CNAME admin → app-medusashop-prod.azurewebsites.net (Proxied)
+CNAME api → app-medusashop-prod.azurewebsites.net (Proxied)
+
+TXT asuid → (kod weryfikacyjny Azure)
+TXT asuid.admin → (kod weryfikacyjny Azure)
+TXT asuid.api → (kod weryfikacyjny Azure)
+
+WAF:
+Security → WAF → Custom Ruleset
+Security → DDoS → ON
+SSL/TLS → Full
+
+Azure:
+./configure-azure-domain.sh
+
+=== 7. ALERTY IDS/IPS ===
+
+./deploy-ids-alerts.sh
+
+Wdraża 5 alertów w Azure Monitor:
+- SQL Injection
+- Brute Force
+- Credential Stuffing
+- DDoS
+- Scanning
+
+=== 8. WERYFIKACJA ===
+
+Aplikacja:
+- Storefront: https://localhost2137.xyz
+- Admin: https://admin.localhost2137.xyz/app
+- API: https://api.localhost2137.xyz
