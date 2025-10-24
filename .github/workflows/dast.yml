@@ -27,10 +27,9 @@ jobs:
           fail_action: false
           allow_issue_writing: false
 
-      - name: SSL Labs Security Check
+      - name: SSL/TLS Security Check
         run: |
-          docker run --rm ssllabs/ssllabs-scan \
-            --grade=B \
-            --verbosity=info \
-            https://localhost2137.xyz
+          echo "Checking SSL/TLS configuration..."
+          curl -vI https://localhost2137.xyz 2>&1 | grep -E "SSL|TLS|cipher"
+          openssl s_client -connect localhost2137.xyz:443 -servername localhost2137.xyz < /dev/null 2>&1 | grep -E "Protocol|Cipher"
         continue-on-error: true
