@@ -190,6 +190,34 @@ jobs:
             --query "workspaceResourceId" -o tsv)
           echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
 
+      - name: IDS Alert - General Failed Auth
+        run: |
+          az monitor scheduled-query create \
+            --name "ids-failed-auth-general" \
+            --resource-group rg-medusashop-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'AppRequests | where ResultCode == 401' > 10" \
+            --description "IDS: Detects general authentication failures (all 401 responses)" \
+            --evaluation-frequency 5m \
+            --window-size 5m \
+            --severity 2 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
+      - name: IDS Alert - Traffic Volume Spike
+        run: |
+          az monitor scheduled-query create \
+            --name "ids-traffic-volume-spike" \
+            --resource-group rg-medusashop-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'AppRequests' > 1000" \
+            --description "IDS: Detects unusual traffic volume spikes" \
+            --evaluation-frequency 5m \
+            --window-size 5m \
+            --severity 3 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
       - name: IDS Alert - Admin Brute Force
         run: |
           az monitor scheduled-query create \
@@ -197,8 +225,8 @@ jobs:
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count 'Q1' > 0" \
-            --condition-query Q1="AppRequests | where Url contains '/admin' or Url contains '/app' | where ResultCode in (401, 403) | summarize FailedAttempts = count() by tostring(client_IP) | where FailedAttempts > 5" \
-            --description "IDS: Detects brute force attacks on admin panel" \
+            --condition-query Q1="AppRequests | where Url contains '/admin' or Url contains '/app' | where ResultCode in (401, 403) | summarize FailedAttempts = count() by ClientIP | where FailedAttempts > 5" \
+            --description "IDS: Detects brute force attacks on admin panel (per IP)" \
             --evaluation-frequency 5m \
             --window-size 5m \
             --severity 2 \
@@ -212,7 +240,7 @@ jobs:
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count 'Q2' > 0" \
-            --condition-query Q2="AppRequests | extend QueryString = tostring(parse_url(Url)['Query Parameters']) | where QueryString contains \"'\" or QueryString contains '--' or QueryString contains 'union' or QueryString contains 'select' or QueryString contains 'drop' | summarize InjectionAttempts = count() by tostring(client_IP) | where InjectionAttempts > 3" \
+            --condition-query Q2="AppRequests | extend QueryString = tostring(parse_url(Url)['Query Parameters']) | where QueryString contains \"'\" or QueryString contains '--' or QueryString contains 'union' or QueryString contains 'select' or QueryString contains 'drop' | summarize InjectionAttempts = count() by ClientIP | where InjectionAttempts > 3" \
             --description "IDS: Detects SQL injection attempts" \
             --evaluation-frequency 5m \
             --window-size 10m \
@@ -227,7 +255,7 @@ jobs:
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count 'Q3' > 0" \
-            --condition-query Q3="AppRequests | where Url contains '/auth/login' or Url contains '/admin/auth' | where ResultCode == 401 | summarize FailedLogins = count() by tostring(client_IP) | where FailedLogins > 10" \
+            --condition-query Q3="AppRequests | where Url contains '/auth/login' or Url contains '/admin/auth' | where ResultCode == 401 | summarize FailedLogins = count() by ClientIP | where FailedLogins > 10" \
             --description "IDS: Detects credential stuffing attacks" \
             --evaluation-frequency 5m \
             --window-size 5m \
@@ -242,7 +270,7 @@ jobs:
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count 'Q4' > 0" \
-            --condition-query Q4="AppRequests | extend SessionId = tostring(parse_json(Properties).sessionId) | where isnotempty(SessionId) | summarize UniqueIPs = dcount(client_IP), Countries = dcount(client_CountryOrRegion) by SessionId | where UniqueIPs > 1 or Countries > 1" \
+            --condition-query Q4="AppRequests | extend SessionId = tostring(parse_json(Properties).sessionId) | where isnotempty(SessionId) | summarize UniqueIPs = dcount(ClientIP), Countries = dcount(ClientCountryOrRegion) by SessionId | where UniqueIPs > 1 or Countries > 1" \
             --description "IDS: Detects session hijacking attempts" \
             --evaluation-frequency 5m \
             --window-size 10m \
@@ -257,7 +285,7 @@ jobs:
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count 'Q5' > 0" \
-            --condition-query Q5="AppRequests | summarize RequestsPerMinute = count() by tostring(client_IP) | where RequestsPerMinute > 100" \
+            --condition-query Q5="AppRequests | summarize RequestsPerMinute = count() by ClientIP | where RequestsPerMinute > 100" \
             --description "IDS: Detects potential DDoS attacks" \
             --evaluation-frequency 1m \
             --window-size 1m \
@@ -272,7 +300,7 @@ jobs:
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
             --condition "count 'Q6' > 0" \
-            --condition-query Q6="AppRequests | summarize TotalRequests = count(), ErrorRate = countif(ResultCode >= 400) * 100.0 / count() | where ErrorRate > 30" \
+            --condition-query Q6="AppRequests | summarize TotalRequests = count(), ErrorRate = toint(countif(ResultCode >= 400) * 100.0 / count()) | where ErrorRate > 30" \
             --description "IDS: Detects traffic anomalies and high error rates" \
             --evaluation-frequency 5m \
             --window-size 5m \
