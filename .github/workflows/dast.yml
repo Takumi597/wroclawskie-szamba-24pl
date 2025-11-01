@@ -23,9 +23,10 @@ jobs:
         with:
           target: 'https://localhost2137.xyz'
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a'
+          cmd_options: '-a -z"-config replacer.full_list(0).description=auth1 -config replacer.full_list(0).enabled=true -config replacer.full_list(0).matchtype=REQ_HEADER -config replacer.full_list(0).matchstr=User-Agent -config replacer.full_list(0).regex=false -config replacer.full_list(0).replacement=Mozilla/5.0"'
           fail_action: false
           allow_issue_writing: false
+          artifact_name: zap-scan
 
       - name: SSL/TLS Security Check
         run: |
