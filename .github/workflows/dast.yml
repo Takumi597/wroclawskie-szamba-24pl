@@ -2,8 +2,9 @@ name: Dast Scanning
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * 1'
+  # Uncomment the following lines to enable scheduled scans
+  # schedule:
+  #   - cron: '0 2 * * 1'
   push:
     branches: [main]
 

@@ -84,7 +84,18 @@ az ad sp create-for-rbac \
 
 **Save the entire JSON output** - needed for GitHub Secrets.
 
-### Step 3: GitHub Secrets
+### Step 3: Get Sonar Token (SAST) [optional]
+
+Setup:
+
+- https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/github-actions-for-sonarcloud
+- https://github.com/marketplace/actions/official-sonarqube-scan?version=v6.0.0
+
+Config file: [sonar-project.properties](./sonar-project.properties)
+
+<img width="100%" alt="Screenshot_sonarqube" src="https://github.com/user-attachments/assets/a2f2660a-3755-4e1e-9ce3-f13655f794ec" />
+
+### Step 4: GitHub Secrets
 
 Go to: Repository > Settings > Secrets and variables > Actions
 
@@ -92,9 +103,10 @@ Add:
 
 - `AZURE_CREDENTIALS`: Entire JSON from Step 2
 - `AZURE_SUBSCRIPTION_ID`: Your subscription ID
-- `STAGING_URL`: `https://app-medusashop-prod.azurewebsites.net` (for DAST testing)
+- `SONAR_TOKEN`: Your Sonar Token
+<!-- - `STAGING_URL`: `https://app-medusashop-prod.azurewebsites.net` (for DAST testing) -->
 
-### Step 4: Terraform Configuration
+### Step 5: Terraform Configuration
 
 ```bash
 cd infrastructure
@@ -121,7 +133,7 @@ redis_capacity = 0
 
 **Note**: Don't commit `terraform.tfvars` to Git (already in `.gitignore`).
 
-### Step 5: Deploy Infrastructure
+### Step 6: Deploy Infrastructure
 
 ```bash
 terraform init
@@ -132,7 +144,7 @@ terraform output > ../terraform-outputs.txt
 
 Creates: Resource Group, VNet, PostgreSQL, Redis, Storage, ACR, App Services (backend + storefront), Application Insights.
 
-### Step 6: Manual Configuration
+### Step 7: Manual Configuration
 
 Two Azure/Terraform limitations require manual setup:
 
@@ -154,7 +166,7 @@ az webapp vnet-integration add \
 az webapp restart --name app-medusashop-prod --resource-group rg-medusashop-prod
 ```
 
-### Step 7: Deploy via GitHub Actions
+### Step 8: Deploy via GitHub Actions
 
 **Note**: You have to enable actions on your repo
 
@@ -177,7 +189,7 @@ Takes ~10-15 minutes.
 curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
 ```
 
-### Step 8: Database Seeding (Optional)
+### Step 9: Database Seeding (Optional)
 
 **Automatic**: Seed the database with "Database seeder" GitHub Action.
 
@@ -189,7 +201,7 @@ curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
 
 **Admin Credentials:** `admin@medusajs.com` / `supersecret` (change after first login!)
 
-### Step 9: Configure Storefront
+### Step 10: Configure Storefront
 
 **Storefront is deployed but needs API key to work properly.**
 
@@ -211,7 +223,7 @@ curl https://app-medusashop-prod.azurewebsites.net/health  # Should return: OK
 curl -I https://storefront-medusashop-prod.azurewebsites.net/  # Should return 200 OK
 ```
 
-### Step 10: Access Your Application
+### Step 11: Access Your Application
 
 **URLs:**
 
@@ -223,9 +235,9 @@ curl -I https://storefront-medusashop-prod.azurewebsites.net/  # Should return 2
 
 ### Troubleshooting
 
-**ENOTFOUND Database Errors**: Re-run Step 6 (VNet integration + restart)
+**ENOTFOUND Database Errors**: Re-run Step 7 (VNet integration + restart)
 
-**PostgreSQL Extension Errors**: Re-run PostgreSQL extension command from Step 6
+**PostgreSQL Extension Errors**: Re-run PostgreSQL extension command from Step 7
 
 **Storefront Not Working**: Ensure API key is set in Storefront
 
