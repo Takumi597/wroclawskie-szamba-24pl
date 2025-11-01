@@ -190,28 +190,90 @@ jobs:
             --query "workspaceResourceId" -o tsv)
           echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
 
-      - name: Create alert for failed login attempts
+      - name: IDS Alert - Admin Brute Force
         run: |
           az monitor scheduled-query create \
-            --name "high-failed-login-attempts" \
+            --name "ids-admin-brute-force" \
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
-            --condition "count 'AppRequests | where ResultCode == 401' > 10" \
-            --description "Alert when failed login attempts (401) exceed threshold" \
+            --condition "count 'Q1' > 0" \
+            --condition-query Q1="AppRequests | where Url contains '/admin' or Url contains '/app' | where ResultCode in (401, 403) | summarize FailedAttempts = count() by tostring(client_IP) | where FailedAttempts > 5" \
+            --description "IDS: Detects brute force attacks on admin panel" \
             --evaluation-frequency 5m \
             --window-size 5m \
             --severity 2 \
             --auto-mitigate false || echo "Alert already exists or failed to create"
         continue-on-error: true
 
-      - name: Create alert for unusual traffic
+      - name: IDS Alert - SQL Injection
         run: |
           az monitor scheduled-query create \
-            --name "unusual-traffic-pattern" \
+            --name "ids-sql-injection" \
             --resource-group rg-medusashop-prod \
             --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
-            --condition "count 'AppRequests' > 1000" \
-            --description "Alert on unusual traffic spikes" \
+            --condition "count 'Q2' > 0" \
+            --condition-query Q2="AppRequests | extend QueryString = tostring(parse_url(Url)['Query Parameters']) | where QueryString contains \"'\" or QueryString contains '--' or QueryString contains 'union' or QueryString contains 'select' or QueryString contains 'drop' | summarize InjectionAttempts = count() by tostring(client_IP) | where InjectionAttempts > 3" \
+            --description "IDS: Detects SQL injection attempts" \
+            --evaluation-frequency 5m \
+            --window-size 10m \
+            --severity 2 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
+      - name: IDS Alert - Credential Stuffing
+        run: |
+          az monitor scheduled-query create \
+            --name "ids-credential-stuffing" \
+            --resource-group rg-medusashop-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'Q3' > 0" \
+            --condition-query Q3="AppRequests | where Url contains '/auth/login' or Url contains '/admin/auth' | where ResultCode == 401 | summarize FailedLogins = count() by tostring(client_IP) | where FailedLogins > 10" \
+            --description "IDS: Detects credential stuffing attacks" \
+            --evaluation-frequency 5m \
+            --window-size 5m \
+            --severity 2 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
+      - name: IDS Alert - Session Hijacking
+        run: |
+          az monitor scheduled-query create \
+            --name "ids-session-hijacking" \
+            --resource-group rg-medusashop-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'Q4' > 0" \
+            --condition-query Q4="AppRequests | extend SessionId = tostring(parse_json(Properties).sessionId) | where isnotempty(SessionId) | summarize UniqueIPs = dcount(client_IP), Countries = dcount(client_CountryOrRegion) by SessionId | where UniqueIPs > 1 or Countries > 1" \
+            --description "IDS: Detects session hijacking attempts" \
+            --evaluation-frequency 5m \
+            --window-size 10m \
+            --severity 2 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
+      - name: IDS Alert - DDoS Detection
+        run: |
+          az monitor scheduled-query create \
+            --name "ids-ddos-detection" \
+            --resource-group rg-medusashop-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'Q5' > 0" \
+            --condition-query Q5="AppRequests | summarize RequestsPerMinute = count() by tostring(client_IP) | where RequestsPerMinute > 100" \
+            --description "IDS: Detects potential DDoS attacks" \
+            --evaluation-frequency 1m \
+            --window-size 1m \
+            --severity 1 \
+            --auto-mitigate false || echo "Alert already exists or failed to create"
+        continue-on-error: true
+
+      - name: IDS Alert - Traffic Anomalies
+        run: |
+          az monitor scheduled-query create \
+            --name "ids-traffic-anomalies" \
+            --resource-group rg-medusashop-prod \
+            --scopes "${{ steps.get-appinsights.outputs.workspace_id }}" \
+            --condition "count 'Q6' > 0" \
+            --condition-query Q6="AppRequests | summarize TotalRequests = count(), ErrorRate = countif(ResultCode >= 400) * 100.0 / count() | where ErrorRate > 30" \
+            --description "IDS: Detects traffic anomalies and high error rates" \
             --evaluation-frequency 5m \
             --window-size 5m \
             --severity 3 \

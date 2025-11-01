@@ -72,3 +72,23 @@ Aplikacja:
 - Storefront: https://localhost2137.xyz
 - Admin: https://admin.localhost2137.xyz/app
 - API: https://api.localhost2137.xyz
+
+=== 9. MONITORING I LOGI ===
+
+Logi ruchu (CLI):
+az monitor log-analytics query \
+  --workspace log-medusashop-prod \
+  --analytics-query "AppRequests | where TimeGenerated > ago(1h) | project TimeGenerated, Url, ResultCode, client_IP | order by TimeGenerated desc" \
+  --output table
+
+Logi ruchu (Portal):
+Azure Portal → Application Insights → appi-medusashop-prod → Logs
+
+Alerty IDS/IPS (Portal):
+Azure Portal → Monitor → Alerts → Alert rules
+
+Historia alertów:
+Azure Portal → Monitor → Alerts → Alert history
+
+Lista alertów (CLI):
+az monitor scheduled-query list --resource-group rg-medusashop-prod --output table

@@ -18,18 +18,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.10.0
+        uses: zaproxy/action-baseline@v0.12.0
         continue-on-error: true
         with:
-          target: 'https://localhost2137.xyz'
+          target: 'https://storefront-medusashop-prod.azurewebsites.net'
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -z"-config replacer.full_list(0).description=auth1 -config replacer.full_list(0).enabled=true -config replacer.full_list(0).matchtype=REQ_HEADER -config replacer.full_list(0).matchstr=User-Agent -config replacer.full_list(0).regex=false -config replacer.full_list(0).replacement=Mozilla/5.0"'
+          cmd_options: '-a'
           fail_action: false
           allow_issue_writing: false
 
       - name: SSL/TLS Security Check
         run: |
           echo "Checking SSL/TLS configuration..."
-          curl -vI https://localhost2137.xyz 2>&1 | grep -E "SSL|TLS|cipher"
-          openssl s_client -connect localhost2137.xyz:443 -servername localhost2137.xyz < /dev/null 2>&1 | grep -E "Protocol|Cipher"
+          curl -vI https://storefront-medusashop-prod.azurewebsites.net 2>&1 | grep -E "SSL|TLS|cipher"
+          openssl s_client -connect storefront-medusashop-prod.azurewebsites.net:443 -servername storefront-medusashop-prod.azurewebsites.net < /dev/null 2>&1 | grep -E "Protocol|Cipher"
         continue-on-error: true
