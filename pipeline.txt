@@ -59,12 +59,15 @@ Azure:
 
 ./deploy-ids-alerts.sh
 
-Wdraża 5 alertów w Azure Monitor:
+Wdraża 8 alertów w Azure Monitor:
+- General Failed Auth
+- Traffic Volume Spike
+- Admin Brute Force
 - SQL Injection
-- Brute Force
 - Credential Stuffing
-- DDoS
-- Scanning
+- Session Hijacking
+- DDoS Detection
+- Traffic Anomalies
 
 === 8. WERYFIKACJA ===
 
@@ -78,7 +81,7 @@ Aplikacja:
 Logi ruchu (CLI):
 az monitor log-analytics query \
   --workspace log-medusashop-prod \
-  --analytics-query "AppRequests | where TimeGenerated > ago(1h) | project TimeGenerated, Url, ResultCode, client_IP | order by TimeGenerated desc" \
+  --analytics-query "AppRequests | where TimeGenerated > ago(1h) | project TimeGenerated, Url, ResultCode, ClientIP | order by TimeGenerated desc" \
   --output table
 
 Logi ruchu (Portal):
@@ -87,8 +90,19 @@ Azure Portal → Application Insights → appi-medusashop-prod → Logs
 Alerty IDS/IPS (Portal):
 Azure Portal → Monitor → Alerts → Alert rules
 
+Zarządzanie alertami (Portal):
+Azure Portal → Monitor → Alerts → Alert rules → Zaznacz alerty → Delete
+
 Historia alertów:
 Azure Portal → Monitor → Alerts → Alert history
 
 Lista alertów (CLI):
 az monitor scheduled-query list --resource-group rg-medusashop-prod --output table
+
+Usuwanie alertów (CLI):
+az monitor scheduled-query delete --name "nazwa-alertu" --resource-group rg-medusashop-prod --yes
+
+Usuwanie wszystkich alertów (CLI):
+az monitor scheduled-query list --resource-group rg-medusashop-prod --query "[].name" -o tsv | while read name; do
+  az monitor scheduled-query delete --name "$name" --resource-group rg-medusashop-prod --yes
+done
